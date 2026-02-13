@@ -5,7 +5,8 @@
   "description": "Synchronize pinned tabs across all Chrome windows (union mode).",
   "permissions": ["tabs", "windows", "storage"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "PinAcross"

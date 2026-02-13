@@ -9,33 +9,13 @@
 // - We only sync http(s) URLs by default.
 // - chrome:// and extension pages are ignored.
 
+import { isSyncableUrl, normalizeUrl, stableSortUrls } from "./core.js";
+
 const STORAGE_KEY = "pinacross.pinnedUrls";
 
 // Debounce reconcile to avoid event storms.
 let reconcileTimer = null;
 let reconcileInFlight = false;
-
-function isSyncableUrl(url) {
-  if (!url) return false;
-  try {
-    const u = new URL(url);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function normalizeUrl(url) {
-  // Minimal normalization to reduce accidental duplicates.
-  // Keep origin + pathname + search; drop hash.
-  try {
-    const u = new URL(url);
-    u.hash = "";
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
 
 async function getPinnedSet() {
   const res = await chrome.storage.local.get(STORAGE_KEY);
@@ -71,7 +51,7 @@ async function ensurePinnedTabsInWindow(windowId, pinnedSet) {
   // 1) Create missing pinned tabs in this window.
   // We create them at index 0 in a stable order.
   // Stable order: sorted URLs. (Simple + deterministic)
-  const desired = Array.from(pinnedSet).sort();
+  const desired = stableSortUrls(pinnedSet);
 
   for (let i = 0; i < desired.length; i++) {
     const url = desired[i];

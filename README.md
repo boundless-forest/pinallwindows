@@ -16,9 +16,23 @@ Sync pinned tabs across all open Chrome windows (same machine, same profile), us
 
 ## Behavior
 
+- Union mode: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
 - Only `http://` and `https://` tabs are synchronized.
 - The canonical pinned set is derived from the currently pinned tabs.
 - The extension periodically reconciles all windows when pin/unpin events happen.
+
+## Testing
+
+Unit tests (pure helpers only):
+
+- `cd /home/bear-wang/coding/pinacross`
+- `npm test`
+
+Manual integration test:
+
+- Load the extension via `chrome://extensions` → Load unpacked.
+- Open two Chrome windows.
+- Pin/unpin a few http(s) tabs and verify they propagate.
 
 ## Notes / limitations
 
