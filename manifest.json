@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "PinAcross",
+  "version": "0.1.0",
+  "description": "Synchronize pinned tabs across all Chrome windows (union mode).",
+  "permissions": ["tabs", "windows", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "PinAcross"
+  },
+  "options_page": "options.html"
+}

@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PinAcross Options</title>
+    <style>
+      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+      code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
+      button { padding: 6px 10px; }
+      .row { margin: 12px 0; }
+      .muted { color: #666; }
+      .status { margin-left: 8px; }
+    </style>
+  </head>
+  <body>
+    <h2>PinAcross</h2>
+    <div class="row">
+      Synchronizes pinned tabs across all Chrome windows in this profile using union mode.
+    </div>
+    <div class="row muted">
+      Union mode means: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
+    </div>
+
+    <div class="row">
+      <button id="reconcile">Reconcile now</button>
+      <span id="status" class="status muted"></span>
+    </div>
+
+    <div class="row muted">
+      Only http(s) URLs are synchronized.
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>
