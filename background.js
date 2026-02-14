@@ -1,15 +1,27 @@
 // PinAcross (MV3)
-// Union-mode pinned tab sync across all windows in the same Chrome profile.
 //
-// Canonical set = all URLs that are currently pinned anywhere.
-// - Pin a tab: URL added to set; tab should appear pinned in all windows.
-// - Unpin a tab: URL removed from set; pinned instances removed everywhere.
+// Goal
+// - Keep all open Chrome windows in the same profile with the same *set* of pinned tabs.
+// - Tab order/position is not important; we do not reorder existing pinned tabs.
 //
-// Notes:
-// - We only sync http(s) URLs by default.
-// - chrome:// and extension pages are ignored.
+// Canonical model
+// - We maintain a canonical set of pinned URLs in chrome.storage.local.
+// - Pinning a tab adds its URL to the canonical set.
+// - Unpinning a tab removes its URL from the canonical set.
+// - Reconcile makes each window match the canonical set.
+//
+// Why this avoids the "tab keeps spawning" bug
+// - Tab objects often have url="" while navigation is in-flight, but pendingUrl is set.
+// - If we ignore pendingUrl, we may not recognize the tab we just created and we would
+//   create another one on the next reconcile (event loop).
+// - We therefore treat (url || pendingUrl) as the tab URL.
 
-import { isSyncableUrl, normalizeUrl, stableSortUrls } from "./core.js";
+import {
+  getTabUrl,
+  isSyncableUrl,
+  normalizeUrl,
+  computePinnedWindowPlan
+} from "./core.js";
 
 const STORAGE_KEY = "pinacross.pinnedUrls";
 
@@ -17,162 +29,172 @@ const STORAGE_KEY = "pinacross.pinnedUrls";
 let reconcileTimer = null;
 let reconcileInFlight = false;
 
-async function getPinnedSet() {
+// When we create/remove tabs during reconcile, Chrome will fire events.
+// We ignore events for a short window to prevent feedback loops.
+const MUTATION_SUPPRESS_MS = 1500;
+let suppressEventsUntil = 0;
+
+function nowMs() {
+  return Date.now();
+}
+
+function eventsSuppressed() {
+  return nowMs() < suppressEventsUntil;
+}
+
+function suppressEvents() {
+  suppressEventsUntil = nowMs() + MUTATION_SUPPRESS_MS;
+}
+
+async function getCanonicalSet() {
   const res = await chrome.storage.local.get(STORAGE_KEY);
   const arr = Array.isArray(res[STORAGE_KEY]) ? res[STORAGE_KEY] : [];
   return new Set(arr);
 }
 
-async function setPinnedSet(set) {
+async function setCanonicalSet(set) {
   await chrome.storage.local.set({ [STORAGE_KEY]: Array.from(set) });
 }
 
-async function computePinnedSetFromBrowser() {
-  const tabs = await chrome.tabs.query({ pinned: true });
-  const set = new Set();
-  for (const t of tabs) {
-    if (isSyncableUrl(t.url)) set.add(normalizeUrl(t.url));
+async function ensureCanonicalInitialized() {
+  // If canonical set is empty, initialize it from currently pinned tabs.
+  // This makes "first install" behave intuitively: existing pinned tabs become the baseline.
+  const set = await getCanonicalSet();
+  if (set.size > 0) return set;
+
+  const pinned = await chrome.tabs.query({ pinned: true });
+  for (const t of pinned) {
+    const url = normalizeUrl(getTabUrl(t));
+    if (isSyncableUrl(url)) set.add(url);
   }
+  await setCanonicalSet(set);
   return set;
 }
 
-async function ensurePinnedTabsInWindow(windowId, pinnedSet) {
+async function reconcileWindow(windowId, canonicalSet) {
   const tabs = await chrome.tabs.query({ windowId });
   const pinnedTabs = tabs.filter((t) => t.pinned);
 
-  const existingPinnedByUrl = new Map();
-  for (const t of pinnedTabs) {
-    if (!isSyncableUrl(t.url)) continue;
-    const u = normalizeUrl(t.url);
-    if (!existingPinnedByUrl.has(u)) existingPinnedByUrl.set(u, []);
-    existingPinnedByUrl.get(u).push(t);
-  }
+  const plan = computePinnedWindowPlan(pinnedTabs, canonicalSet);
 
-  // 1) Create missing pinned tabs in this window.
-  // We create them at index 0 in a stable order.
-  // Stable order: sorted URLs. (Simple + deterministic)
-  const desired = stableSortUrls(pinnedSet);
-
-  for (let i = 0; i < desired.length; i++) {
-    const url = desired[i];
-    const list = existingPinnedByUrl.get(url);
-    if (list && list.length > 0) continue;
-
+  // Create missing pinned tabs.
+  // We create at the end of the pinned region by using index equal to current pinned count.
+  // This keeps user-chosen order intact and avoids fighting user rearrangements.
+  for (const url of plan.createMissingUrls) {
     try {
+      suppressEvents();
       await chrome.tabs.create({
         windowId,
         url,
         pinned: true,
-        active: false,
-        index: i
+        active: false
       });
     } catch (e) {
-      // Ignore per-window creation failures.
       console.warn("PinAcross: failed to create pinned tab", { windowId, url, e });
     }
   }
 
-  // 2) Remove pinned tabs that are not in the canonical set.
-  // Also remove duplicates (keep one).
-  const toRemove = [];
-  const keepCount = new Map();
-
-  for (const t of pinnedTabs) {
-    if (!isSyncableUrl(t.url)) continue;
-    const url = normalizeUrl(t.url);
-
-    if (!pinnedSet.has(url)) {
-      toRemove.push(t.id);
-      continue;
-    }
-
-    const c = keepCount.get(url) || 0;
-    if (c >= 1) {
-      // Duplicate
-      toRemove.push(t.id);
-    } else {
-      keepCount.set(url, 1);
-    }
-  }
-
-  if (toRemove.length > 0) {
+  // Remove extra pinned tabs not in canonical set (and duplicates).
+  if (plan.removeTabIds.length > 0) {
     try {
-      await chrome.tabs.remove(toRemove);
+      suppressEvents();
+      await chrome.tabs.remove(plan.removeTabIds);
     } catch (e) {
-      console.warn("PinAcross: failed to remove tabs", { toRemove, e });
+      console.warn("PinAcross: failed to remove pinned tabs", {
+        windowId,
+        remove: plan.removeTabIds,
+        e
+      });
     }
   }
 }
 
-async function reconcileAllWindows() {
+async function reconcileAllWindows(reason = "unspecified") {
   if (reconcileInFlight) return;
   reconcileInFlight = true;
   try {
-    // Canonical pinned set should reflect reality + storage.
-    // In union mode, reality is source of truth; we recompute it.
-    const pinnedSet = await computePinnedSetFromBrowser();
-    await setPinnedSet(pinnedSet);
+    const canonicalSet = await ensureCanonicalInitialized();
 
     const wins = await chrome.windows.getAll({ populate: false });
     for (const w of wins) {
       if (!w.id) continue;
-      await ensurePinnedTabsInWindow(w.id, pinnedSet);
+      await reconcileWindow(w.id, canonicalSet);
     }
+  } catch (e) {
+    console.error("PinAcross: reconcile error", { reason, e });
   } finally {
     reconcileInFlight = false;
   }
 }
 
-function scheduleReconcile(delayMs = 400) {
+function scheduleReconcile(delayMs = 400, reason = "scheduled") {
   if (reconcileTimer) clearTimeout(reconcileTimer);
   reconcileTimer = setTimeout(() => {
     reconcileTimer = null;
-    reconcileAllWindows().catch((e) => console.error("PinAcross: reconcile error", e));
+    reconcileAllWindows(reason);
   }, delayMs);
+}
+
+async function onTabPinnedChanged(tab, pinned) {
+  // Update canonical set based on a user pin/unpin action.
+  // If we are in the middle of reconcile mutations, ignore.
+  if (eventsSuppressed()) return;
+
+  const url = normalizeUrl(getTabUrl(tab));
+  if (!isSyncableUrl(url)) return;
+
+  const canonical = await ensureCanonicalInitialized();
+
+  if (pinned) {
+    canonical.add(url);
+  } else {
+    canonical.delete(url);
+  }
+
+  await setCanonicalSet(canonical);
+  scheduleReconcile(150, pinned ? "user_pin" : "user_unpin");
 }
 
 // Event hooks
 chrome.runtime.onInstalled.addListener(() => {
-  scheduleReconcile(0);
+  scheduleReconcile(0, "installed");
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  scheduleReconcile(0);
+  scheduleReconcile(0, "startup");
 });
 
 chrome.windows.onCreated.addListener(() => {
-  scheduleReconcile(300);
+  // New windows should be brought into sync quickly.
+  scheduleReconcile(200, "window_created");
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // Pin/unpin changes show up here.
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+  // Pin/unpin events.
   if (typeof changeInfo.pinned === "boolean") {
-    scheduleReconcile(200);
+    // tab in this callback should contain the latest pinned state.
+    onTabPinnedChanged(tab, changeInfo.pinned).catch((e) =>
+      console.error("PinAcross: onTabPinnedChanged error", e)
+    );
     return;
   }
 
-  // URL changes can matter if a pinned tab navigates.
-  if (typeof changeInfo.url === "string" && tab && tab.pinned) {
-    scheduleReconcile(400);
+  // If a pinned tab navigates, we might need to recognize it earlier via pendingUrl.
+  // We don't treat navigation as a canonical change, but a reconcile can help dedupe.
+  if (typeof changeInfo.url === "string" && tab?.pinned) {
+    if (!eventsSuppressed()) scheduleReconcile(500, "pinned_url_changed");
   }
 });
 
-chrome.tabs.onRemoved.addListener(() => {
-  // If a pinned tab is closed, union set may shrink.
-  scheduleReconcile(500);
-});
-
 chrome.tabs.onCreated.addListener((tab) => {
-  // Some flows create pinned tabs directly.
-  if (tab && tab.pinned) scheduleReconcile(300);
+  // If some flow creates a pinned tab directly, reconcile.
+  if (tab?.pinned && !eventsSuppressed()) scheduleReconcile(300, "pinned_created");
 });
 
 // Manual trigger from the options page.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === "PINACROSS_RECONCILE") {
-    reconcileAllWindows()
-      .then(() => sendResponse({ ok: true }))
-      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    reconcileAllWindows("manual").then(() => sendResponse({ ok: true }));
     return true;
   }
 });

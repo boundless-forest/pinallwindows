@@ -18,8 +18,13 @@ Sync pinned tabs across all open Chrome windows (same machine, same profile), us
 
 - Union mode: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
 - Only `http://` and `https://` tabs are synchronized.
-- The canonical pinned set is derived from the currently pinned tabs.
-- The extension periodically reconciles all windows when pin/unpin events happen.
+- Canonical pinned set:
+  - Stored in `chrome.storage.local`.
+  - Initialized from existing pinned tabs on first run.
+  - Updated only by pin/unpin events (not by navigation).
+- The extension reconciles windows after pin/unpin events and when new windows are created.
+
+Important: Closing a pinned tab in one window does not remove it globally; it may reappear due to reconciliation. Use unpin to remove globally.
 
 ## Testing
 

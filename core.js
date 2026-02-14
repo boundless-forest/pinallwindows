@@ -1,6 +1,17 @@
 // Core utilities for PinAcross.
 // Kept dependency-free so we can unit-test with Node.
 
+export function getTabUrl(tab) {
+  // In Chrome extension APIs, a tab may have:
+  // - url: the current committed URL
+  // - pendingUrl: the URL that will be committed after navigation completes
+  //
+  // During tab creation or navigation, `url` can be empty while `pendingUrl`
+  // already contains the destination. For our sync logic, treating either as
+  // the "tab URL" prevents duplicate creation loops.
+  return tab?.url || tab?.pendingUrl || "";
+}
+
 export function isSyncableUrl(url) {
   if (!url) return false;
   try {
@@ -37,4 +48,44 @@ export function uniqueBy(items, keyFn) {
     out.push(it);
   }
   return out;
+}
+
+export function computePinnedWindowPlan(pinnedTabs, canonicalSet) {
+  // Convert a window's pinned tabs into a plan:
+  // - desiredUrls: stable list of canonical URLs
+  // - existingByUrl: map url -> [tabId]
+  // - createMissingUrls: urls that should be created as pinned tabs
+  // - removeTabIds: pinned tab ids that should be removed (not canonical, or duplicates)
+  const existingByUrl = new Map();
+
+  for (const t of pinnedTabs) {
+    const url = normalizeUrl(getTabUrl(t));
+    if (!isSyncableUrl(url)) continue;
+    const list = existingByUrl.get(url) || [];
+    list.push(t.id);
+    existingByUrl.set(url, list);
+  }
+
+  const desiredUrls = stableSortUrls(canonicalSet);
+
+  const createMissingUrls = [];
+  for (const url of desiredUrls) {
+    const list = existingByUrl.get(url);
+    if (!list || list.length === 0) createMissingUrls.push(url);
+  }
+
+  const removeTabIds = [];
+  const kept = new Set();
+
+  for (const [url, ids] of existingByUrl.entries()) {
+    if (!canonicalSet.has(url)) {
+      removeTabIds.push(...ids);
+      continue;
+    }
+    // Keep one, remove the rest.
+    if (ids.length > 1) removeTabIds.push(...ids.slice(1));
+    kept.add(url);
+  }
+
+  return { desiredUrls, existingByUrl, createMissingUrls, removeTabIds };
 }
