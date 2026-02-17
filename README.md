@@ -17,6 +17,9 @@ Sync pinned tabs across all open Chrome windows (same machine, same profile), us
 ## Behavior
 
 - Union mode: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
+- Gemini special-case (simple mode): `gemini.google.com` is origin-level.
+  - Only one Gemini pinned tab exists per window.
+  - Pinning a new Gemini URL replaces the global Gemini pinned URL (all windows navigate).
 - Only `http://` and `https://` tabs are synchronized.
 - Canonical pinned set:
   - Stored in `chrome.storage.local`.
@@ -35,9 +38,19 @@ Unit tests (pure helpers only):
 
 Manual integration test:
 
+Baseline sync:
 - Load the extension via `chrome://extensions` → Load unpacked.
 - Open two Chrome windows.
 - Pin/unpin a few http(s) tabs and verify they propagate.
+
+Gemini (origin-level, replace-with-newest):
+- Open two Chrome windows.
+- In window A, pin a Gemini URL like:
+  - https://gemini.google.com/u/2/gem/.../de2122e1101613c9
+- Verify window B has exactly one pinned Gemini tab.
+- In window A, pin a different Gemini URL like:
+  - https://gemini.google.com/u/2/gem/.../fe5a2df6a838c36c
+- Verify every window still has exactly one pinned Gemini tab, and it navigates to the newest pinned Gemini URL.
 
 ## Notes / limitations
 

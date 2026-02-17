@@ -1,10 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  GEMINI_HOST,
   getTabUrl,
   isSyncableUrl,
   normalizeUrl,
-  stableSortUrls,
+  canonicalKeyForUrl,
+  isGeminiUrl,
+  stableSortStrings,
   uniqueBy,
   computePinnedWindowPlan
 } from "../core.js";
@@ -32,8 +35,27 @@ test("normalizeUrl drops hash but keeps search", () => {
   );
 });
 
-test("stableSortUrls sorts lexicographically", () => {
-  assert.deepEqual(stableSortUrls(["b", "a", "c"]), ["a", "b", "c"]);
+test("Gemini detection works", () => {
+  assert.equal(isGeminiUrl(`https://${GEMINI_HOST}/u/2/gem/x/y`), true);
+  assert.equal(isGeminiUrl("https://example.com/x"), false);
+});
+
+test("canonicalKeyForUrl uses origin-level key for Gemini", () => {
+  assert.equal(
+    canonicalKeyForUrl(`https://${GEMINI_HOST}/u/2/gem/a/b`),
+    `origin:https://${GEMINI_HOST}`
+  );
+});
+
+test("canonicalKeyForUrl uses normalized URL for non-Gemini", () => {
+  assert.equal(
+    canonicalKeyForUrl("https://example.com/a#x"),
+    "https://example.com/a"
+  );
+});
+
+test("stableSortStrings sorts lexicographically", () => {
+  assert.deepEqual(stableSortStrings(["b", "a", "c"]), ["a", "b", "c"]);
 });
 
 test("uniqueBy keeps first occurrence", () => {
@@ -41,27 +63,43 @@ test("uniqueBy keeps first occurrence", () => {
   assert.deepEqual(uniqueBy(xs, (x) => x.id), [{ id: 1 }, { id: 2 }]);
 });
 
-test("computePinnedWindowPlan plans creates/removes and dedupes", () => {
-  const canonical = new Set([
-    "https://example.com/a",
-    "https://example.com/b"
+test("computePinnedWindowPlan updates origin-level (Gemini) to newest URL", () => {
+  const canonical = new Map([
+    // One gemini canonical item, targeting chat B
+    [`origin:https://${GEMINI_HOST}`, `https://${GEMINI_HOST}/u/2/gem/x/bbbb`]
   ]);
 
   const pinnedTabs = [
-    { id: 1, pinned: true, url: "https://example.com/a" },
-    // duplicate A
-    { id: 2, pinned: true, url: "https://example.com/a" },
-    // extra C (not canonical)
-    { id: 3, pinned: true, url: "https://example.com/c" },
-    // pending URL should count
-    { id: 4, pinned: true, url: "", pendingUrl: "https://example.com/b" }
+    // Existing pinned gemini tab currently at chat A
+    { id: 10, pinned: true, url: `https://${GEMINI_HOST}/u/2/gem/x/aaaa` }
   ];
 
   const plan = computePinnedWindowPlan(pinnedTabs, canonical);
 
-  // Nothing missing because A and B exist (B via pendingUrl)
-  assert.deepEqual(plan.createMissingUrls, []);
+  // No need to create (we already have one gemini pinned tab)
+  assert.deepEqual(plan.create, []);
 
-  // Remove duplicate A (id 2) and extra C (id 3)
-  assert.deepEqual(new Set(plan.removeTabIds), new Set([2, 3]));
+  // But we should update it to canonical URL (bbbb)
+  assert.deepEqual(plan.update, [
+    { tabId: 10, url: `https://${GEMINI_HOST}/u/2/gem/x/bbbb` }
+  ]);
+
+  // Nothing to remove
+  assert.deepEqual(plan.removeTabIds, []);
+});
+
+test("computePinnedWindowPlan removes extra gemini pinned tabs (duplicates)", () => {
+  const canonical = new Map([
+    [`origin:https://${GEMINI_HOST}`, `https://${GEMINI_HOST}/u/2/gem/x/cccc`]
+  ]);
+
+  const pinnedTabs = [
+    { id: 1, pinned: true, url: `https://${GEMINI_HOST}/u/2/gem/x/aaaa` },
+    { id: 2, pinned: true, url: `https://${GEMINI_HOST}/u/2/gem/x/bbbb` }
+  ];
+
+  const plan = computePinnedWindowPlan(pinnedTabs, canonical);
+
+  // Keep first, remove duplicate
+  assert.deepEqual(new Set(plan.removeTabIds), new Set([2]));
 });

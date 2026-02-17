@@ -1,14 +1,19 @@
 // PinAcross (MV3)
 //
 // Goal
-// - Keep all open Chrome windows in the same profile with the same *set* of pinned tabs.
+// - Keep all open Chrome windows in the same profile with the same *set* of pinned items.
 // - Tab order/position is not important; we do not reorder existing pinned tabs.
 //
 // Canonical model
-// - We maintain a canonical set of pinned URLs in chrome.storage.local.
-// - Pinning a tab adds its URL to the canonical set.
-// - Unpinning a tab removes its URL from the canonical set.
-// - Reconcile makes each window match the canonical set.
+// - We maintain a canonical mapping in chrome.storage.local: key -> url.
+// - Pinning/unpinning updates the canonical mapping.
+// - Reconcile makes each window match the canonical mapping.
+//
+// Site-specific rule (keep it simple)
+// - Gemini (gemini.google.com) is origin-level:
+//   - There can be at most one Gemini pinned tab per window.
+//   - When the user pins a new Gemini page, we *replace* the canonical Gemini URL.
+//     This causes the pinned Gemini tab in every window to navigate to the new page.
 //
 // Why this avoids the "tab keeps spawning" bug
 // - Tab objects often have url="" while navigation is in-flight, but pendingUrl is set.
@@ -20,16 +25,18 @@ import {
   getTabUrl,
   isSyncableUrl,
   normalizeUrl,
+  canonicalKeyForUrl,
+  isGeminiUrl,
   computePinnedWindowPlan
 } from "./core.js";
 
-const STORAGE_KEY = "pinacross.pinnedUrls";
+const STORAGE_KEY = "pinacross.canonical";
 
 // Debounce reconcile to avoid event storms.
 let reconcileTimer = null;
 let reconcileInFlight = false;
 
-// When we create/remove tabs during reconcile, Chrome will fire events.
+// When we create/remove/update tabs during reconcile, Chrome will fire events.
 // We ignore events for a short window to prevent feedback loops.
 const MUTATION_SUPPRESS_MS = 1500;
 let suppressEventsUntil = 0;
@@ -46,55 +53,89 @@ function suppressEvents() {
   suppressEventsUntil = nowMs() + MUTATION_SUPPRESS_MS;
 }
 
-async function getCanonicalSet() {
-  const res = await chrome.storage.local.get(STORAGE_KEY);
-  const arr = Array.isArray(res[STORAGE_KEY]) ? res[STORAGE_KEY] : [];
-  return new Set(arr);
+function mapFromRecord(obj) {
+  const m = new Map();
+  if (!obj || typeof obj !== "object") return m;
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === "string") m.set(k, v);
+  }
+  return m;
 }
 
-async function setCanonicalSet(set) {
-  await chrome.storage.local.set({ [STORAGE_KEY]: Array.from(set) });
+function recordFromMap(map) {
+  const obj = {};
+  for (const [k, v] of map.entries()) obj[k] = v;
+  return obj;
+}
+
+async function getCanonicalMap() {
+  const res = await chrome.storage.local.get(STORAGE_KEY);
+  return mapFromRecord(res[STORAGE_KEY]);
+}
+
+async function setCanonicalMap(map) {
+  await chrome.storage.local.set({ [STORAGE_KEY]: recordFromMap(map) });
 }
 
 async function ensureCanonicalInitialized() {
-  // If canonical set is empty, initialize it from currently pinned tabs.
+  // If canonical map is empty, initialize it from currently pinned tabs.
   // This makes "first install" behave intuitively: existing pinned tabs become the baseline.
-  const set = await getCanonicalSet();
-  if (set.size > 0) return set;
+  const map = await getCanonicalMap();
+  if (map.size > 0) return map;
 
   const pinned = await chrome.tabs.query({ pinned: true });
   for (const t of pinned) {
-    const url = normalizeUrl(getTabUrl(t));
-    if (isSyncableUrl(url)) set.add(url);
+    const raw = getTabUrl(t);
+    if (!isSyncableUrl(raw)) continue;
+
+    const url = normalizeUrl(raw);
+    const key = canonicalKeyForUrl(url);
+
+    // For Gemini origin keys, keep the first seen as baseline.
+    if (!map.has(key)) map.set(key, url);
   }
-  await setCanonicalSet(set);
-  return set;
+
+  await setCanonicalMap(map);
+  return map;
 }
 
-async function reconcileWindow(windowId, canonicalSet) {
+async function reconcileWindow(windowId, canonicalMap) {
   const tabs = await chrome.tabs.query({ windowId });
   const pinnedTabs = tabs.filter((t) => t.pinned);
 
-  const plan = computePinnedWindowPlan(pinnedTabs, canonicalSet);
+  const plan = computePinnedWindowPlan(pinnedTabs, canonicalMap);
 
   // Create missing pinned tabs.
-  // We create at the end of the pinned region by using index equal to current pinned count.
-  // This keeps user-chosen order intact and avoids fighting user rearrangements.
-  for (const url of plan.createMissingUrls) {
+  for (const item of plan.create) {
     try {
       suppressEvents();
       await chrome.tabs.create({
         windowId,
-        url,
+        url: item.url,
         pinned: true,
         active: false
       });
     } catch (e) {
-      console.warn("PinAcross: failed to create pinned tab", { windowId, url, e });
+      console.warn("PinAcross: failed to create pinned tab", {
+        windowId,
+        key: item.key,
+        url: item.url,
+        e
+      });
     }
   }
 
-  // Remove extra pinned tabs not in canonical set (and duplicates).
+  // Update pinned tabs (navigate) when canonical URL differs.
+  for (const u of plan.update) {
+    try {
+      suppressEvents();
+      await chrome.tabs.update(u.tabId, { url: u.url, active: false });
+    } catch (e) {
+      console.warn("PinAcross: failed to update pinned tab", { windowId, ...u, e });
+    }
+  }
+
+  // Remove pinned tabs not in canonical set (and duplicates).
   if (plan.removeTabIds.length > 0) {
     try {
       suppressEvents();
@@ -113,12 +154,12 @@ async function reconcileAllWindows(reason = "unspecified") {
   if (reconcileInFlight) return;
   reconcileInFlight = true;
   try {
-    const canonicalSet = await ensureCanonicalInitialized();
+    const canonicalMap = await ensureCanonicalInitialized();
 
     const wins = await chrome.windows.getAll({ populate: false });
     for (const w of wins) {
       if (!w.id) continue;
-      await reconcileWindow(w.id, canonicalSet);
+      await reconcileWindow(w.id, canonicalMap);
     }
   } catch (e) {
     console.error("PinAcross: reconcile error", { reason, e });
@@ -140,18 +181,24 @@ async function onTabPinnedChanged(tab, pinned) {
   // If we are in the middle of reconcile mutations, ignore.
   if (eventsSuppressed()) return;
 
-  const url = normalizeUrl(getTabUrl(tab));
-  if (!isSyncableUrl(url)) return;
+  const raw = getTabUrl(tab);
+  if (!isSyncableUrl(raw)) return;
+
+  const url = normalizeUrl(raw);
+  const key = canonicalKeyForUrl(url);
 
   const canonical = await ensureCanonicalInitialized();
 
   if (pinned) {
-    canonical.add(url);
+    // "Replace with newest" behavior for Gemini origin-level key.
+    // For normal keys, this is simply add/overwrite.
+    canonical.set(key, url);
   } else {
-    canonical.delete(url);
+    // Unpin removes that pinned item globally.
+    canonical.delete(key);
   }
 
-  await setCanonicalSet(canonical);
+  await setCanonicalMap(canonical);
   scheduleReconcile(150, pinned ? "user_pin" : "user_unpin");
 }
 
@@ -172,17 +219,23 @@ chrome.windows.onCreated.addListener(() => {
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   // Pin/unpin events.
   if (typeof changeInfo.pinned === "boolean") {
-    // tab in this callback should contain the latest pinned state.
     onTabPinnedChanged(tab, changeInfo.pinned).catch((e) =>
       console.error("PinAcross: onTabPinnedChanged error", e)
     );
     return;
   }
 
-  // If a pinned tab navigates, we might need to recognize it earlier via pendingUrl.
-  // We don't treat navigation as a canonical change, but a reconcile can help dedupe.
+  // If a pinned tab navigates and it is a Gemini tab, treat that as a "replace" event.
+  // This makes Gemini switching feel natural: navigating the pinned Gemini tab to a new
+  // session and re-pinning is not required; a pin event is still the primary driver.
+  // We keep it conservative: only schedule a reconcile to dedupe if needed.
   if (typeof changeInfo.url === "string" && tab?.pinned) {
-    if (!eventsSuppressed()) scheduleReconcile(500, "pinned_url_changed");
+    const url = normalizeUrl(getTabUrl(tab));
+    if (isGeminiUrl(url) && !eventsSuppressed()) {
+      // Optional: we could auto-update canonical on navigation, but that would be surprising.
+      // For simplicity, do not change canonical here. Just reconcile to keep windows clean.
+      scheduleReconcile(600, "pinned_gemini_navigated");
+    }
   }
 });
 
