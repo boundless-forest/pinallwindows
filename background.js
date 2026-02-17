@@ -1,19 +1,20 @@
 // PinAcross (MV3)
 //
 // Goal
-// - Keep all open Chrome windows in the same profile with the same *set* of pinned items.
+// - Keep all open Chrome windows in the same profile with the same set of pinned *apps*.
+// - An "app" is identified by origin (scheme + host [+port]).
 // - Tab order/position is not important; we do not reorder existing pinned tabs.
 //
 // Canonical model
 // - We maintain a canonical mapping in chrome.storage.local: key -> url.
-// - Pinning/unpinning updates the canonical mapping.
-// - Reconcile makes each window match the canonical mapping.
+// - key is `origin:<origin>`.
+// - url is the initial URL used when creating the pinned app tab in new windows.
 //
-// Site-specific rule (keep it simple)
-// - Gemini (gemini.google.com) is origin-level:
-//   - There can be at most one Gemini pinned tab per window.
-//   - When the user pins a new Gemini page, we *replace* the canonical Gemini URL.
-//     This causes the pinned Gemini tab in every window to navigate to the new page.
+// Keep-existing policy
+// - Navigating a pinned tab within an app does not change canonical state.
+// - If the user pins multiple tabs for the same app, we keep one and remove duplicates.
+// - To switch the pinned target for an app, unpin the existing pinned tab first,
+//   then pin the new one.
 //
 // Why this avoids the "tab keeps spawning" bug
 // - Tab objects often have url="" while navigation is in-flight, but pendingUrl is set.
@@ -26,7 +27,6 @@ import {
   isSyncableUrl,
   normalizeUrl,
   canonicalKeyForUrl,
-  isGeminiUrl,
   computePinnedWindowPlan
 } from "./core.js";
 
@@ -36,7 +36,7 @@ const STORAGE_KEY = "pinacross.canonical";
 let reconcileTimer = null;
 let reconcileInFlight = false;
 
-// When we create/remove/update tabs during reconcile, Chrome will fire events.
+// When we create/remove tabs during reconcile, Chrome will fire events.
 // We ignore events for a short window to prevent feedback loops.
 const MUTATION_SUPPRESS_MS = 1500;
 let suppressEventsUntil = 0;
@@ -79,7 +79,7 @@ async function setCanonicalMap(map) {
 
 async function ensureCanonicalInitialized() {
   // If canonical map is empty, initialize it from currently pinned tabs.
-  // This makes "first install" behave intuitively: existing pinned tabs become the baseline.
+  // This makes "first install" behave intuitively: existing pinned apps become the baseline.
   const map = await getCanonicalMap();
   if (map.size > 0) return map;
 
@@ -91,7 +91,7 @@ async function ensureCanonicalInitialized() {
     const url = normalizeUrl(raw);
     const key = canonicalKeyForUrl(url);
 
-    // For Gemini origin keys, keep the first seen as baseline.
+    // Keep the first seen URL as the "seed" for new-window creation.
     if (!map.has(key)) map.set(key, url);
   }
 
@@ -105,7 +105,7 @@ async function reconcileWindow(windowId, canonicalMap) {
 
   const plan = computePinnedWindowPlan(pinnedTabs, canonicalMap);
 
-  // Create missing pinned tabs.
+  // Create missing pinned app tabs.
   for (const item of plan.create) {
     try {
       suppressEvents();
@@ -125,15 +125,7 @@ async function reconcileWindow(windowId, canonicalMap) {
     }
   }
 
-  // Update pinned tabs (navigate) when canonical URL differs.
-  for (const u of plan.update) {
-    try {
-      suppressEvents();
-      await chrome.tabs.update(u.tabId, { url: u.url, active: false });
-    } catch (e) {
-      console.warn("PinAcross: failed to update pinned tab", { windowId, ...u, e });
-    }
-  }
+  // Keep-existing policy: we do not navigate/update tabs.
 
   // Remove pinned tabs not in canonical set (and duplicates).
   if (plan.removeTabIds.length > 0) {
@@ -177,7 +169,7 @@ function scheduleReconcile(delayMs = 400, reason = "scheduled") {
 }
 
 async function onTabPinnedChanged(tab, pinned) {
-  // Update canonical set based on a user pin/unpin action.
+  // Update canonical mapping based on a user pin/unpin action.
   // If we are in the middle of reconcile mutations, ignore.
   if (eventsSuppressed()) return;
 
@@ -190,11 +182,11 @@ async function onTabPinnedChanged(tab, pinned) {
   const canonical = await ensureCanonicalInitialized();
 
   if (pinned) {
-    // "Replace with newest" behavior for Gemini origin-level key.
-    // For normal keys, this is simply add/overwrite.
-    canonical.set(key, url);
+    // Add the app if missing.
+    // Keep-existing policy: do not overwrite existing seed URL.
+    if (!canonical.has(key)) canonical.set(key, url);
   } else {
-    // Unpin removes that pinned item globally.
+    // Unpin removes that app globally.
     canonical.delete(key);
   }
 
@@ -212,39 +204,22 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.windows.onCreated.addListener(() => {
-  // New windows should be brought into sync quickly.
   scheduleReconcile(200, "window_created");
 });
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
-  // Pin/unpin events.
   if (typeof changeInfo.pinned === "boolean") {
     onTabPinnedChanged(tab, changeInfo.pinned).catch((e) =>
       console.error("PinAcross: onTabPinnedChanged error", e)
     );
-    return;
   }
-
-  // If a pinned tab navigates and it is a Gemini tab, treat that as a "replace" event.
-  // This makes Gemini switching feel natural: navigating the pinned Gemini tab to a new
-  // session and re-pinning is not required; a pin event is still the primary driver.
-  // We keep it conservative: only schedule a reconcile to dedupe if needed.
-  if (typeof changeInfo.url === "string" && tab?.pinned) {
-    const url = normalizeUrl(getTabUrl(tab));
-    if (isGeminiUrl(url) && !eventsSuppressed()) {
-      // Optional: we could auto-update canonical on navigation, but that would be surprising.
-      // For simplicity, do not change canonical here. Just reconcile to keep windows clean.
-      scheduleReconcile(600, "pinned_gemini_navigated");
-    }
-  }
+  // Keep-existing: ignore URL changes.
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
-  // If some flow creates a pinned tab directly, reconcile.
   if (tab?.pinned && !eventsSuppressed()) scheduleReconcile(300, "pinned_created");
 });
 
-// Manual trigger from the options page.
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg && msg.type === "PINACROSS_RECONCILE") {
     reconcileAllWindows("manual").then(() => sendResponse({ ok: true }));

@@ -1,9 +1,11 @@
 # PinAcross
 
-Sync pinned tabs across all open Chrome windows (same machine, same profile), using **union mode**:
+Sync pinned tabs across all open Chrome windows (same machine, same profile), using **app-level union mode**:
 
-- Pin a tab in any window → that URL is pinned in every window.
-- Unpin a tab in any window → that URL is unpinned/removed everywhere.
+- Pin a tab in any window → that *app* (site/origin) becomes pinned in every window.
+- Unpin a tab in any window → that app is unpinned/removed everywhere.
+
+In other words: PinAcross syncs pinned items by origin (scheme + host), not by exact URL.
 
 ## Install (developer mode)
 
@@ -16,16 +18,18 @@ Sync pinned tabs across all open Chrome windows (same machine, same profile), us
 
 ## Behavior
 
-- Union mode: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
-- Gemini special-case (simple mode): `gemini.google.com` is origin-level.
-  - Only one Gemini pinned tab exists per window.
-  - Pinning a new Gemini URL replaces the global Gemini pinned URL (all windows navigate).
+- Union mode (app-level): pin anywhere → the same *app* appears pinned everywhere; unpin anywhere → removed everywhere.
 - Only `http://` and `https://` tabs are synchronized.
-- Canonical pinned set:
-  - Stored in `chrome.storage.local`.
+- Canonical pinned apps:
+  - Stored in `chrome.storage.local` as `origin:<origin> -> seedUrl`.
   - Initialized from existing pinned tabs on first run.
   - Updated only by pin/unpin events (not by navigation).
-- The extension reconciles windows after pin/unpin events and when new windows are created.
+- One pinned tab per app per window:
+  - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAcross will keep one and remove duplicates.
+
+How to switch the pinned target for an app:
+- Unpin the current pinned tab for that app.
+- Then pin the new one you want.
 
 Important: Closing a pinned tab in one window does not remove it globally; it may reappear due to reconciliation. Use unpin to remove globally.
 

@@ -1,17 +1,21 @@
 // Core utilities for PinAcross.
 // Kept dependency-free so we can unit-test with Node.
 
-// Site-specific behavior notes
+// Philosophy (simple + predictable)
 //
-// Some web apps (e.g. Gemini) encode "which session" in the path.
-// Others may store session state in cookies/localStorage and use many URLs.
+// PinAcross synchronizes *apps* (sites) rather than exact URLs.
+// That means the sync identity is the tab's origin (scheme + host).
 //
-// For simplicity, PinAcross supports a small built-in rule:
-// - For gemini.google.com: treat the entire site as a single pinned item
-//   (origin-level sync), and *replace* the pinned URL globally when the user
-//   pins a new Gemini page.
-
-export const GEMINI_HOST = "gemini.google.com";
+// Example:
+// - Any https://gemini.google.com/... URL is treated as the same pinned app.
+// - This avoids problems where a web app encodes session IDs in the URL.
+//
+// Policy: "keep existing" (requested)
+// - When a pinned tab navigates within the same app, we do not change canonical state.
+// - If the user pins a second tab from the same app, PinAcross will keep the existing
+//   pinned app tab and remove duplicates.
+// - To switch the pinned target for an app, unpin the existing pinned tab first,
+//   then pin the new one.
 
 export function getTabUrl(tab) {
   // In Chrome extension APIs, a tab may have:
@@ -54,25 +58,13 @@ export function parseUrl(url) {
   }
 }
 
-export function isGeminiUrl(url) {
-  const u = parseUrl(url);
-  return !!u && u.hostname === GEMINI_HOST;
-}
-
 export function canonicalKeyForUrl(url) {
-  // Compute a stable identity key for sync membership.
-  //
-  // Default: use normalized URL without hash.
-  // Gemini special-case: origin-level key so only one Gemini pinned item exists.
+  // App-level sync key.
+  // We use the origin (scheme + host + optional port) as the key.
   const normalized = normalizeUrl(url);
   const u = parseUrl(normalized);
   if (!u) return normalized;
-
-  if (u.hostname === GEMINI_HOST) {
-    return `origin:${u.origin}`;
-  }
-
-  return normalized;
+  return `origin:${u.origin}`;
 }
 
 export function stableSortStrings(xs) {
@@ -95,12 +87,12 @@ export function computePinnedWindowPlan(pinnedTabs, canonicalMap) {
   // Convert a window's pinned tabs into a plan.
   //
   // canonicalMap: Map<key, url>
-  // - key is a membership identity (usually normalized URL, or origin:...)
-  // - url is the target URL that should exist for that key
+  // - key is an app-level membership identity (origin:...)
+  // - url is the initial URL used when creating the pinned app tab in new windows
   //
   // Plan output:
   // - create: array of { key, url }
-  // - update: array of { tabId, url }   (navigate an existing pinned tab)
+  // - update: array of { tabId, url }   (unused in keep-existing mode; reserved)
   // - removeTabIds: pinned tab ids that should be removed (not canonical, or duplicates)
 
   const existingByKey = new Map(); // key -> [{id, url}]
@@ -123,7 +115,7 @@ export function computePinnedWindowPlan(pinnedTabs, canonicalMap) {
   const update = [];
   const removeTabIds = [];
 
-  // Ensure each desired key exists once.
+  // Ensure each desired key exists once per window.
   for (const key of desiredKeys) {
     const targetUrl = canonicalMap.get(key);
     const existing = existingByKey.get(key) || [];
@@ -134,16 +126,11 @@ export function computePinnedWindowPlan(pinnedTabs, canonicalMap) {
     }
 
     // Keep the first one, remove duplicates.
-    const keep = existing[0];
     if (existing.length > 1) {
       removeTabIds.push(...existing.slice(1).map((x) => x.id));
     }
 
-    // If the kept tab has a different URL than the canonical URL, update it.
-    // This is essential for Gemini origin-level sync in "replace with newest" mode.
-    if (typeof targetUrl === "string" && keep.url !== targetUrl) {
-      update.push({ tabId: keep.id, url: targetUrl });
-    }
+    // Keep-existing mode: do NOT navigate/update the kept tab.
   }
 
   // Remove pinned tabs that aren't part of canonical keys.
