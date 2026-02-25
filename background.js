@@ -160,6 +160,9 @@ async function reconcileWindow(windowId, canonicalMap) {
 }
 
 async function reconcileAllWindows(reason = "unspecified") {
+  // Global reconcile pass over all windows.
+  // Case: if a pass is already running, record that we need to run again later
+  // so we don't drop updates that happened mid-pass.
   if (reconcileInFlight) {
     reconcilePending = true;
     return;
@@ -168,6 +171,7 @@ async function reconcileAllWindows(reason = "unspecified") {
   try {
     const canonicalMap = await ensureCanonicalInitialized();
 
+    // Case: enumerate all windows and reconcile each to the canonical set.
     const wins = await chrome.windows.getAll({ populate: false });
     for (const w of wins) {
       if (!w.id) continue;
@@ -177,6 +181,7 @@ async function reconcileAllWindows(reason = "unspecified") {
     console.error("PinAllWindows: reconcile error", { reason, e });
   } finally {
     reconcileInFlight = false;
+    // Case: events arrived during the pass; run one follow-up reconcile.
     if (reconcilePending) {
       reconcilePending = false;
       reconcileAllWindows("pending");
@@ -185,6 +190,7 @@ async function reconcileAllWindows(reason = "unspecified") {
 }
 
 function scheduleReconcile(delayMs = 400, reason = "scheduled") {
+  // Debounced scheduling to avoid event storms (pin/unpin/create/update).
   if (reconcileTimer) clearTimeout(reconcileTimer);
   reconcileTimer = setTimeout(() => {
     reconcileTimer = null;
@@ -194,10 +200,11 @@ function scheduleReconcile(delayMs = 400, reason = "scheduled") {
 
 async function onTabPinnedChanged(tab, pinned) {
   // Update canonical mapping based on a user pin/unpin action.
-  // If we are in the middle of reconcile mutations, ignore.
+  // Case: if we are in the middle of reconcile mutations, ignore (feedback loop).
   if (eventsSuppressed()) return;
 
   const raw = getTabUrl(tab);
+  // Case: non-http(s) tabs (chrome://, about:, extensions) are out of scope.
   if (!isSyncableUrl(raw)) return;
 
   const url = normalizeUrl(raw);
@@ -206,32 +213,60 @@ async function onTabPinnedChanged(tab, pinned) {
   const canonical = await ensureCanonicalInitialized();
 
   if (pinned) {
+    // Case: user pinned a tab. Ensure the app is in canonical set.
     // Add the app if missing.
     // Keep-existing policy: do not overwrite existing seed URL.
     if (!canonical.has(key)) canonical.set(key, url);
-  } else {
-    // Unpin removes that app globally.
-    canonical.delete(key);
+    await setCanonicalMap(canonical);
+    scheduleReconcile(150, "user_pin");
+    return;
   }
 
-  await setCanonicalMap(canonical);
-  scheduleReconcile(150, pinned ? "user_pin" : "user_unpin");
+  // Case: user unpinned a tab, but we must distinguish from window teardown.
+  // For unpin, confirm the tab still exists. Closing a window can emit
+  // pinned=false during teardown, which should not change canonical state.
+  const tabId = tab?.id;
+  if (!tabId) return;
+
+  setTimeout(() => {
+    chrome.tabs.get(tabId, async (t) => {
+      // Case: tab no longer exists -> window closed or tab removed; ignore.
+      if (chrome.runtime.lastError || !t) return;
+      // Case: tab got re-pinned quickly; ignore.
+      if (t.pinned) return;
+      const latestRaw = getTabUrl(t);
+      // Case: if it is not syncable, don't mutate canonical.
+      if (!isSyncableUrl(latestRaw)) return;
+      const latestUrl = normalizeUrl(latestRaw);
+      const latestKey = canonicalKeyForUrl(latestUrl);
+
+      const latestCanonical = await ensureCanonicalInitialized();
+      // Case: confirmed explicit unpin -> remove from canonical set.
+      latestCanonical.delete(latestKey);
+      await setCanonicalMap(latestCanonical);
+      scheduleReconcile(150, "user_unpin");
+    });
+  }, 200);
 }
 
 // Event hooks
 chrome.runtime.onInstalled.addListener(() => {
+  // Case: extension installed or updated; initialize and sync immediately.
   scheduleReconcile(0, "installed");
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  // Case: Chrome starts up; ensure windows are synced.
   scheduleReconcile(0, "startup");
 });
 
 chrome.windows.onCreated.addListener(() => {
+  // Case: new window created; apply canonical pinned set to it.
   scheduleReconcile(200, "window_created");
 });
 
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+  // Case: tab pinned state toggled (user pin/unpin).
   if (typeof changeInfo.pinned === "boolean") {
     onTabPinnedChanged(tab, changeInfo.pinned).catch((e) =>
       console.error("PinAllWindows: onTabPinnedChanged error", e)
@@ -241,10 +276,12 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
+  // Case: pinned tab created directly (e.g., from session restore).
   if (tab?.pinned && !eventsSuppressed()) scheduleReconcile(300, "pinned_created");
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // Case: manual reconcile request from UI or legacy message.
   if (msg && (msg.type === "PINALLWINDOWS_RECONCILE" || msg.type === "PINACROSS_RECONCILE")) {
     reconcileAllWindows("manual").then(() => sendResponse({ ok: true }));
     return true;
