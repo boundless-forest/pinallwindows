@@ -38,29 +38,36 @@ Permissions justification
 
 Chrome Web Store requires a zip file containing the extension source.
 
+Option A: zip the repo folder (recommended)
+
+This avoids manual copying and reduces future maintenance.
+
 1) Bump version
 - Edit `manifest.json` and increment `version`.
 - If you tag releases, also bump `package.json` version.
 
-2) Create a clean build folder
+2) Create the zip
 From the repo root:
 
-- Create a staging directory:
+- `cd /home/bear-wang/coding/pinallwindows`
+- `rm -f pinallwindows.zip`
+- `zip -r pinallwindows.zip . \
+  -x ".git/*" \
+  -x "node_modules/*" \
+  -x "dist-store/*" \
+  -x "pinallwindows.zip"`
 
-  `mkdir -p dist-store`
-
-- Copy only what Chrome needs:
-
-  `cp manifest.json background.js core.js options.html options.js LICENSE PRIVACY_POLICY.md -t dist-store/`
-  `mkdir -p dist-store/icons && cp icons/*.png dist-store/icons/`
-
-3) Create the zip
-
-- `cd dist-store`
-- `zip -r ../pinallwindows.zip .`
-
-4) Upload
+3) Upload
 - Upload `pinallwindows.zip` to the Chrome Web Store dashboard.
+
+Option B: staged dist folder
+
+If you prefer a minimal upload, create a clean staging folder:
+
+- `rm -rf dist-store && mkdir -p dist-store/icons`
+- `cp manifest.json background.js core.js options.html options.js LICENSE PRIVACY_POLICY.md CHROME_WEB_STORE.md -t dist-store/`
+- `cp icons/*.png dist-store/icons/`
+- `cd dist-store && zip -r ../pinallwindows.zip .`
 
 ## Notes
 

@@ -63,23 +63,30 @@ This folder can be uploaded to the Chrome Web Store as a zip.
 
 Packaging steps
 
+Option A: zip the repo folder (recommended for low friction)
+
+This method avoids manual copying. It creates a zip from the repo root and excludes dev-only files.
+
 1. Bump version
 - Update `manifest.json` version.
 
-2. Prepare a clean upload folder
+2. Create the zip
 From the repo root:
 
-- `rm -rf dist-store && mkdir -p dist-store/icons`
-- `cp manifest.json background.js core.js options.html options.js LICENSE PRIVACY_POLICY.md CHROME_WEB_STORE.md -t dist-store/`
-- `cp icons/*.png dist-store/icons/`
+- `cd /home/bear-wang/coding/pinallwindows`
+- `rm -f pinallwindows.zip`
+- `zip -r pinallwindows.zip . \
+  -x ".git/*" \
+  -x "node_modules/*" \
+  -x "dist-store/*" \
+  -x "pinallwindows.zip"`
 
-3. Zip it
-
-- `cd dist-store`
-- `zip -r ../pinallwindows.zip .`
-
-4. Upload
+3. Upload
 - Upload `pinallwindows.zip` to the Chrome Web Store dashboard.
+
+Option B: staged dist folder
+
+If you prefer a minimal upload, use the staged folder method described in `CHROME_WEB_STORE.md`.
 
 Other store materials
 - Listing copy and a longer checklist are in `CHROME_WEB_STORE.md`.
