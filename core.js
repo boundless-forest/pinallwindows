@@ -1,9 +1,9 @@
-// Core utilities for PinAcross.
+// Core utilities for PinAllWindows.
 // Kept dependency-free so we can unit-test with Node.
 
 // Philosophy (simple + predictable)
 //
-// PinAcross synchronizes *apps* (sites) rather than exact URLs.
+// PinAllWindows synchronizes *apps* (sites) rather than exact URLs.
 // That means the sync identity is the tab's origin (scheme + host).
 //
 // Example:
@@ -12,7 +12,7 @@
 //
 // Policy: "keep existing" (requested)
 // - When a pinned tab navigates within the same app, we do not change canonical state.
-// - If the user pins a second tab from the same app, PinAcross will keep the existing
+// - If the user pins a second tab from the same app, PinAllWindows will keep the existing
 //   pinned app tab and remove duplicates.
 // - To switch the pinned target for an app, unpin the existing pinned tab first,
 //   then pin the new one.

@@ -1,4 +1,4 @@
-// PinAcross (MV3)
+// PinAllWindows (MV3)
 //
 // Goal
 // - Keep all open Chrome windows in the same profile with the same set of pinned *apps*.
@@ -30,7 +30,12 @@ import {
   computePinnedWindowPlan
 } from "./core.js";
 
-const STORAGE_KEY = "pinacross.canonical";
+// Storage key migration
+// - Old builds used: pinacross.canonical
+// - New builds use: pinallwindows.canonical
+// We migrate forward so existing testers don't lose their canonical pinned-app set.
+const STORAGE_KEY = "pinallwindows.canonical";
+const STORAGE_KEY_OLD = "pinacross.canonical";
 
 // Debounce reconcile to avoid event storms.
 let reconcileTimer = null;
@@ -69,8 +74,19 @@ function recordFromMap(map) {
 }
 
 async function getCanonicalMap() {
-  const res = await chrome.storage.local.get(STORAGE_KEY);
-  return mapFromRecord(res[STORAGE_KEY]);
+  const res = await chrome.storage.local.get([STORAGE_KEY, STORAGE_KEY_OLD]);
+
+  const current = mapFromRecord(res[STORAGE_KEY]);
+  if (current.size > 0) return current;
+
+  // Migration path: if the new key is empty but the old key exists, copy it forward.
+  const legacy = mapFromRecord(res[STORAGE_KEY_OLD]);
+  if (legacy.size > 0) {
+    await setCanonicalMap(legacy);
+    return legacy;
+  }
+
+  return current;
 }
 
 async function setCanonicalMap(map) {
@@ -116,7 +132,7 @@ async function reconcileWindow(windowId, canonicalMap) {
         active: false
       });
     } catch (e) {
-      console.warn("PinAcross: failed to create pinned tab", {
+      console.warn("PinAllWindows: failed to create pinned tab", {
         windowId,
         key: item.key,
         url: item.url,
@@ -133,7 +149,7 @@ async function reconcileWindow(windowId, canonicalMap) {
       suppressEvents();
       await chrome.tabs.remove(plan.removeTabIds);
     } catch (e) {
-      console.warn("PinAcross: failed to remove pinned tabs", {
+      console.warn("PinAllWindows: failed to remove pinned tabs", {
         windowId,
         remove: plan.removeTabIds,
         e
@@ -154,7 +170,7 @@ async function reconcileAllWindows(reason = "unspecified") {
       await reconcileWindow(w.id, canonicalMap);
     }
   } catch (e) {
-    console.error("PinAcross: reconcile error", { reason, e });
+    console.error("PinAllWindows: reconcile error", { reason, e });
   } finally {
     reconcileInFlight = false;
   }
@@ -210,7 +226,7 @@ chrome.windows.onCreated.addListener(() => {
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
   if (typeof changeInfo.pinned === "boolean") {
     onTabPinnedChanged(tab, changeInfo.pinned).catch((e) =>
-      console.error("PinAcross: onTabPinnedChanged error", e)
+      console.error("PinAllWindows: onTabPinnedChanged error", e)
     );
   }
   // Keep-existing: ignore URL changes.
@@ -221,7 +237,7 @@ chrome.tabs.onCreated.addListener((tab) => {
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg && msg.type === "PINACROSS_RECONCILE") {
+  if (msg && (msg.type === "PINALLWINDOWS_RECONCILE" || msg.type === "PINACROSS_RECONCILE")) {
     reconcileAllWindows("manual").then(() => sendResponse({ ok: true }));
     return true;
   }

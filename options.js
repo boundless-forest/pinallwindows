@@ -8,7 +8,8 @@ function setStatus(text) {
 btn.addEventListener("click", async () => {
   setStatus("Running…");
   try {
-    const res = await chrome.runtime.sendMessage({ type: "PINACROSS_RECONCILE" });
+    // Keep backwards compatibility with older builds.
+    const res = await chrome.runtime.sendMessage({ type: "PINALLWINDOWS_RECONCILE" });
     if (res && res.ok) setStatus("Done.");
     else setStatus("Failed: " + (res && res.error ? res.error : "unknown"));
   } catch (e) {
