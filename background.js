@@ -40,6 +40,7 @@ const STORAGE_KEY_OLD = "pinacross.canonical";
 // Debounce reconcile to avoid event storms.
 let reconcileTimer = null;
 let reconcileInFlight = false;
+let reconcilePending = false;
 
 // When we create/remove tabs during reconcile, Chrome will fire events.
 // We ignore events for a short window to prevent feedback loops.
@@ -159,7 +160,10 @@ async function reconcileWindow(windowId, canonicalMap) {
 }
 
 async function reconcileAllWindows(reason = "unspecified") {
-  if (reconcileInFlight) return;
+  if (reconcileInFlight) {
+    reconcilePending = true;
+    return;
+  }
   reconcileInFlight = true;
   try {
     const canonicalMap = await ensureCanonicalInitialized();
@@ -173,6 +177,10 @@ async function reconcileAllWindows(reason = "unspecified") {
     console.error("PinAllWindows: reconcile error", { reason, e });
   } finally {
     reconcileInFlight = false;
+    if (reconcilePending) {
+      reconcilePending = false;
+      reconcileAllWindows("pending");
+    }
   }
 }
 
