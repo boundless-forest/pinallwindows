@@ -82,7 +82,9 @@ From the repo root:
   -x "pinallwindows.zip"`
 
 3. Upload
-- Upload `pinallwindows.zip` to the Chrome Web Store dashboard.
+- Open the Chrome Web Store Developer Dashboard:
+  - https://chrome.google.com/webstore/devconsole
+- Upload `pinallwindows.zip`.
 
 Option B: staged dist folder
 
