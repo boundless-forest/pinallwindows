@@ -59,11 +59,32 @@ Switching the pinned target for an app:
 
 ## Chrome Web Store
 
-Publishing checklist, listing copy, and packaging instructions are in:
-- `CHROME_WEB_STORE.md`
+This folder can be uploaded to the Chrome Web Store as a zip.
 
-Privacy policy text is in:
-- `PRIVACY_POLICY.md`
+Packaging steps
+
+1. Bump version
+- Update `manifest.json` version.
+
+2. Prepare a clean upload folder
+From the repo root:
+
+- `rm -rf dist-store && mkdir -p dist-store/icons`
+- `cp manifest.json background.js core.js options.html options.js LICENSE PRIVACY_POLICY.md CHROME_WEB_STORE.md -t dist-store/`
+- `cp icons/*.png dist-store/icons/`
+
+3. Zip it
+
+- `cd dist-store`
+- `zip -r ../pinallwindows.zip .`
+
+4. Upload
+- Upload `pinallwindows.zip` to the Chrome Web Store dashboard.
+
+Other store materials
+- Listing copy and a longer checklist are in `CHROME_WEB_STORE.md`.
+- Privacy policy is in `PRIVACY_POLICY.md`.
+- You still need to prepare screenshots.
 
 ## Notes / limitations
 
