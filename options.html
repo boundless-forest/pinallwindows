@@ -6,7 +6,6 @@
     <title>PinAllWindows Options</title>
     <style>
       body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-      code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; }
       button { padding: 6px 10px; }
       .row { margin: 12px 0; }
       .muted { color: #666; }
@@ -19,18 +18,18 @@
       Synchronizes pinned tabs across all Chrome windows in this profile using union mode.
     </div>
     <div class="row muted">
-      Union mode means: pin anywhere → appears everywhere; unpin anywhere → removed everywhere.
+      Union mode means: pin anywhere -> appears everywhere; unpin anywhere -> removed everywhere.
     </div>
 
     <div class="row">
-      <button id="reconcile">Reconcile now</button>
+      <button id="clear-storage">Clear pinned storage</button>
       <span id="status" class="status muted"></span>
     </div>
 
     <div class="row muted">
-      PinAllWindows syncs pinned items by origin (app-level). Only http(s) URLs are synchronized.
+      This clears the extension's saved pinned set and applies an empty sync state to all normal windows.
     </div>
 
-    <script src="options.js"></script>
+    <script src="src/options.js"></script>
   </body>
 </html>

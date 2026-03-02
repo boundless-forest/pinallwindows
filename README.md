@@ -9,10 +9,13 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 
 ## Install (developer mode)
 
-1. Open `chrome://extensions`
-2. Enable Developer mode
-3. Click Load unpacked
-4. Select this folder:
+1. Install dependencies:
+   - `cd /home/bear-wang/coding/pinallwindows`
+   - `pnpm install`
+2. Open `chrome://extensions`
+3. Enable Developer mode
+4. Click Load unpacked
+5. Select this folder:
 
    `/home/bear-wang/coding/pinallwindows`
 
@@ -26,19 +29,21 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
   - Updated only by pin/unpin events (not by navigation).
 - One pinned tab per app per window:
   - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAllWindows will keep one and remove duplicates.
+- Options action:
+  - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
 
 How to switch the pinned target for an app:
 - Unpin the current pinned tab for that app.
 - Then pin the new one you want.
 
-Important: Closing a pinned tab in one window does not remove it globally; it may reappear due to reconciliation. Use unpin to remove globally.
+Important: Closing a pinned tab in one window does not remove it globally; it may reappear during sync. Use unpin to remove globally.
 
 ## Testing
 
 Unit tests (pure helpers only):
 
 - `cd /home/bear-wang/coding/pinallwindows`
-- `npm test`
+- `pnpm test`
 
 Manual integration test:
 
@@ -97,7 +102,7 @@ Other store materials
 
 ## Notes / limitations
 
-- Chrome does not provide an atomic "pin across all windows" primitive; this extension reconciles via events, so you may see brief delays.
+- Chrome does not provide an atomic "pin across all windows" primitive; this extension syncs via events, so you may see brief delays.
 - Identity is origin-based (scheme + host). Different pages under the same origin are treated as the same app.
 
 ## License

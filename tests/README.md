@@ -1,6 +1,6 @@
 Tests are run with Node's built-in test runner:
 
-- `npm test`
+- `pnpm test`
 
-These tests cover only the pure helper functions in `core.js` (URL filtering/normalization and small utilities).
-The Chrome APIs are integration-tested manually by loading the extension in `chrome://extensions`.
+These tests cover pure shared logic in `src/shared/` (URL parsing + sync planning).
+Chrome API behavior is still validated manually by loading the extension in `chrome://extensions`.

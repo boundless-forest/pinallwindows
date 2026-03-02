@@ -5,7 +5,7 @@
   "description": "Synchronize pinned apps across all Chrome windows.",
   "permissions": ["tabs", "windows", "storage"],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "src/background.js",
     "type": "module"
   },
   "action": {

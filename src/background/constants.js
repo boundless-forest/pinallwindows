@@ -1,0 +1,9 @@
+export const STORAGE_KEY = "pinallwindows.canonical";
+export const STORAGE_INITIALIZED_KEY = "pinallwindows.initialized";
+export const MESSAGE_CLEAR_STORAGE = "PINALLWINDOWS_CLEAR_STORAGE";
+export const SYNC_DELAY_DEFAULT_MS = 400;
+export const SYNC_DELAY_FAST_MS = 150;
+export const SYNC_DELAY_ON_WINDOW_CREATED_MS = 200;
+export const SYNC_DELAY_ON_PINNED_TAB_CREATED_MS = 300;
+export const MUTATION_SUPPRESS_MS = 1500;
+export const UNPIN_CONFIRM_DELAY_MS = 200;

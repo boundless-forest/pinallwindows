@@ -1,68 +1,69 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  canonicalKeyForUrl,
   getTabUrl,
+  isSyncWindow,
   isSyncableUrl,
   normalizeUrl,
-  canonicalKeyForUrl,
-  stableSortStrings,
-  uniqueBy,
-  computePinnedWindowPlan
-} from "../core.js";
+  tabToCanonicalEntry
+} from "../src/shared/tab-utils.js";
+import { computeSyncPlan } from "../src/shared/sync-plan.js";
 
-test("getTabUrl uses url then pendingUrl", () => {
+test("getTabUrl prefers url then pendingUrl", () => {
   assert.equal(getTabUrl({ url: "https://a.com" }), "https://a.com");
   assert.equal(getTabUrl({ url: "", pendingUrl: "https://b.com" }), "https://b.com");
   assert.equal(getTabUrl({ pendingUrl: "https://c.com" }), "https://c.com");
   assert.equal(getTabUrl({}), "");
 });
 
-test("isSyncableUrl accepts http(s) only", () => {
+test("isSyncableUrl accepts only http(s)", () => {
   assert.equal(isSyncableUrl("https://example.com"), true);
   assert.equal(isSyncableUrl("http://example.com"), true);
-  assert.equal(isSyncableUrl("chrome://extensions"), false);
+  assert.equal(isSyncableUrl("chrome-extension://id/page.html"), false);
   assert.equal(isSyncableUrl("about:blank"), false);
 });
 
-test("normalizeUrl drops hash but keeps search", () => {
-  assert.equal(
-    normalizeUrl("https://example.com/a?x=1#section"),
-    "https://example.com/a?x=1"
-  );
+test("normalizeUrl removes hash", () => {
+  assert.equal(normalizeUrl("https://example.com/x?a=1#hash"), "https://example.com/x?a=1");
 });
 
-test("canonicalKeyForUrl is origin-level for all sites", () => {
+test("canonicalKeyForUrl uses origin", () => {
   assert.equal(canonicalKeyForUrl("https://example.com/a"), "origin:https://example.com");
   assert.equal(
-    canonicalKeyForUrl("https://gemini.google.com/u/2/gem/x/de2122"),
+    canonicalKeyForUrl("https://gemini.google.com/u/2/gem/x/abc"),
     "origin:https://gemini.google.com"
   );
 });
 
-test("stableSortStrings sorts lexicographically", () => {
-  assert.deepEqual(stableSortStrings(["b", "a", "c"]), ["a", "b", "c"]);
+test("tabToCanonicalEntry returns null for non-syncable URLs", () => {
+  assert.equal(tabToCanonicalEntry({ url: "chrome://extensions" }), null);
+  assert.deepEqual(tabToCanonicalEntry({ pendingUrl: "https://example.com/a#b" }), {
+    key: "origin:https://example.com",
+    url: "https://example.com/a"
+  });
 });
 
-test("uniqueBy keeps first occurrence", () => {
-  const xs = [{ id: 1 }, { id: 2 }, { id: 1 }];
-  assert.deepEqual(uniqueBy(xs, (x) => x.id), [{ id: 1 }, { id: 2 }]);
+test("isSyncWindow allows only normal windows", () => {
+  assert.equal(isSyncWindow({ type: "normal" }), true);
+  assert.equal(isSyncWindow({ type: "popup" }), false);
+  assert.equal(isSyncWindow(null), false);
 });
 
-test("computePinnedWindowPlan keeps one pinned tab per origin and removes duplicates", () => {
+test("computeSyncPlan creates missing tabs and removes duplicates", () => {
   const canonical = new Map([
-    ["origin:https://gemini.google.com", "https://gemini.google.com/"]
+    ["origin:https://a.com", "https://a.com/home"],
+    ["origin:https://b.com", "https://b.com/start"]
   ]);
 
   const pinnedTabs = [
-    { id: 1, pinned: true, url: "https://gemini.google.com/u/2/gem/x/aaaa" },
-    { id: 2, pinned: true, url: "https://gemini.google.com/u/2/gem/x/bbbb" }
+    { id: 1, pinned: true, url: "https://a.com/chat/1" },
+    { id: 2, pinned: true, url: "https://a.com/chat/2" },
+    { id: 3, pinned: true, url: "https://c.com/other" }
   ];
 
-  const plan = computePinnedWindowPlan(pinnedTabs, canonical);
+  const plan = computeSyncPlan(pinnedTabs, canonical);
 
-  // We already have the app pinned, so no create.
-  assert.deepEqual(plan.create, []);
-
-  // Duplicate should be removed.
-  assert.deepEqual(new Set(plan.removeTabIds), new Set([2]));
+  assert.deepEqual(plan.create, [{ key: "origin:https://b.com", url: "https://b.com/start" }]);
+  assert.deepEqual(new Set(plan.removeTabIds), new Set([2, 3]));
 });

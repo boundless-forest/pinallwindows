@@ -50,6 +50,7 @@ This avoids manual copying and reduces future maintenance.
 From the repo root:
 
 - `cd /home/bear-wang/coding/pinallwindows`
+- `pnpm install`
 - `rm -f pinallwindows.zip`
 - `zip -r pinallwindows.zip . \
   -x ".git/*" \
@@ -67,12 +68,13 @@ Option B: staged dist folder
 If you prefer a minimal upload, create a clean staging folder:
 
 - `rm -rf dist-store && mkdir -p dist-store/icons`
-- `cp manifest.json background.js core.js options.html options.js LICENSE PRIVACY_POLICY.md CHROME_WEB_STORE.md -t dist-store/`
+- `pnpm install`
+- `cp manifest.json options.html LICENSE PRIVACY_POLICY.md CHROME_WEB_STORE.md -t dist-store/`
+- `cp -r src dist-store/`
 - `cp icons/*.png dist-store/icons/`
 - `cd dist-store && zip -r ../pinallwindows.zip .`
 
 ## Notes
 
 - Do not include dev-only files in the upload (tests, node_modules, worktree metadata).
-- The extension does not require a build step.
 - If you change permissions, Chrome may require users to re-approve.
