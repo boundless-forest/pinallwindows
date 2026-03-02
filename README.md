@@ -24,7 +24,7 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 - Union mode (app-level): pin anywhere → the same *app* appears pinned everywhere; unpin anywhere → removed everywhere.
 - Only `http://` and `https://` tabs are synchronized.
 - Canonical pinned apps:
-  - Stored in `chrome.storage.local` as `origin:<origin> -> seedUrl`.
+  - Stored in `chrome.storage.local` as `pinallwindows.origins: string[]` (origin list).
   - Initialized from existing pinned tabs on first run.
   - Updated only by pin/unpin events (not by navigation).
 - One pinned tab per app per window:

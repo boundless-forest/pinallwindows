@@ -6,6 +6,7 @@ import {
   isSyncWindow,
   isSyncableUrl,
   normalizeUrl,
+  seedUrlForCanonicalKey,
   tabToCanonicalEntry
 } from "../src/shared/tab-utils.js";
 import { computeSyncPlan } from "../src/shared/sync-plan.js";
@@ -33,6 +34,13 @@ test("canonicalKeyForUrl uses origin", () => {
   assert.equal(
     canonicalKeyForUrl("https://gemini.google.com/u/2/gem/x/abc"),
     "origin:https://gemini.google.com"
+  );
+});
+
+test("seedUrlForCanonicalKey stores origin root URL", () => {
+  assert.equal(
+    seedUrlForCanonicalKey("origin:https://x.com", "https://x.com/home?foo=1"),
+    "https://x.com/"
   );
 });
 

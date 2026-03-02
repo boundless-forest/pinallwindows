@@ -30,6 +30,18 @@ export function storageSet(values) {
         });
     });
 }
+export function storageRemove(keys) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.remove(keys, () => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve();
+        });
+    });
+}
 export function queryPinnedTabs() {
     return new Promise((resolve, reject) => {
         chrome.tabs.query({ pinned: true }, (tabs) => {

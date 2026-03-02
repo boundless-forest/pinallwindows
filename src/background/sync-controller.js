@@ -1,7 +1,7 @@
 import { createPinnedTab, getAllNormalWindows, getTab, getWindow, queryTabsInWindow, removeTabs } from "./chrome-api.js";
 import { MESSAGE_CLEAR_STORAGE, MUTATION_SUPPRESS_MS, SYNC_DELAY_DEFAULT_MS, SYNC_DELAY_FAST_MS, SYNC_DELAY_ON_PINNED_TAB_CREATED_MS, SYNC_DELAY_ON_WINDOW_CREATED_MS, UNPIN_CONFIRM_DELAY_MS } from "./constants.js";
 import { computeSyncPlan } from "../shared/sync-plan.js";
-import { isSyncWindow, tabToCanonicalEntry } from "../shared/tab-utils.js";
+import { isSyncWindow, seedUrlForCanonicalKey, tabToCanonicalEntry } from "../shared/tab-utils.js";
 // Sync controller responsibilities:
 // - listen to Chrome events (startup/window/tab/message)
 // - keep canonical pinned app state in storage
@@ -127,7 +127,7 @@ export function createSyncController(canonicalStore) {
             // Union behavior: pin anywhere adds this app key globally.
             const canonicalMap = await canonicalStore.ensureInitialized();
             if (!canonicalMap.has(entry.key)) {
-                canonicalMap.set(entry.key, entry.url);
+                canonicalMap.set(entry.key, seedUrlForCanonicalKey(entry.key, entry.url));
                 await canonicalStore.save(canonicalMap);
             }
             scheduleSync(SYNC_DELAY_FAST_MS, "user_pin");

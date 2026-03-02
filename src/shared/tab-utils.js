@@ -33,6 +33,19 @@ export function canonicalKeyForUrl(url) {
         return normalized;
     }
 }
+export function seedUrlForCanonicalKey(key, fallbackUrl = "") {
+    if (typeof key === "string" && key.startsWith("origin:")) {
+        const origin = key.slice("origin:".length);
+        try {
+            // Canonical value format: always store origin root URL.
+            return `${new URL(origin).origin}/`;
+        }
+        catch {
+            // Fall through to fallback normalization below.
+        }
+    }
+    return normalizeUrl(fallbackUrl);
+}
 export function tabToCanonicalEntry(tab) {
     const rawUrl = getTabUrl(tab);
     if (!isSyncableUrl(rawUrl))
