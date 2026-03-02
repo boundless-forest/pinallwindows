@@ -117,6 +117,17 @@ async function ensureCanonicalInitialized() {
 }
 
 async function reconcileWindow(windowId, canonicalMap) {
+  // Defensive guard: only reconcile normal browser windows.
+  // Some extension-driven popups (e.g., wallet dialogs) are non-normal windows
+  // and should not participate in pinned-tab sync.
+  try {
+    const win = await chrome.windows.get(windowId);
+    if (!win || win.type !== "normal") return;
+  } catch {
+    // Window may have been closed while a reconcile pass was queued.
+    return;
+  }
+
   const tabs = await chrome.tabs.query({ windowId });
   const pinnedTabs = tabs.filter((t) => t.pinned);
 
@@ -172,7 +183,10 @@ async function reconcileAllWindows(reason = "unspecified") {
     const canonicalMap = await ensureCanonicalInitialized();
 
     // Case: enumerate all windows and reconcile each to the canonical set.
-    const wins = await chrome.windows.getAll({ populate: false });
+    const wins = await chrome.windows.getAll({
+      populate: false,
+      windowTypes: ["normal"]
+    });
     for (const w of wins) {
       if (!w.id) continue;
       await reconcileWindow(w.id, canonicalMap);
@@ -260,8 +274,9 @@ chrome.runtime.onStartup.addListener(() => {
   scheduleReconcile(0, "startup");
 });
 
-chrome.windows.onCreated.addListener(() => {
+chrome.windows.onCreated.addListener((win) => {
   // Case: new window created; apply canonical pinned set to it.
+  if (!win || win.type !== "normal") return;
   scheduleReconcile(200, "window_created");
 });
 
