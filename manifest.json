@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PinAllWindows",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Synchronize pinned apps across all Chrome windows.",
   "permissions": ["tabs", "windows", "storage", "sidePanel"],
   "background": {
@@ -16,7 +16,7 @@
     }
   },
   "commands": {
-    "open-tab-tree": {
+    "_execute_action": {
       "suggested_key": {
         "default": "Alt+Shift+P",
         "mac": "Alt+Shift+P"
