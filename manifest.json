@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PinAllWindows",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Synchronize pinned apps across all Chrome windows.",
   "permissions": ["tabs", "windows", "storage", "sidePanel"],
   "background": {
