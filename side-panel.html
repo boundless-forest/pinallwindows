@@ -6,7 +6,7 @@
     <title>PinAllWindows Tabs</title>
     <link rel="stylesheet" href="src/tab-tree.css" />
   </head>
-  <body>
+  <body class="side-panel">
     <main class="app">
       <header class="topbar">
         <div class="title-wrap">
@@ -18,10 +18,10 @@
 
       <div id="mode-bar" class="mode-bar" hidden></div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
-      <div id="tab-list" class="tab-list" role="listbox" tabindex="0" aria-label="All tabs"></div>
+      <div id="tab-list" class="tab-list" role="listbox" aria-label="All tabs"></div>
 
       <footer class="help">
-        Up/Down select | Enter open | M move | Delete close | Esc cancel
+        Double-click a tab to open it. Regular tabs can move or close.
       </footer>
     </main>
 

@@ -1,10 +1,14 @@
-import { STORAGE_TAB_TREE_MODE_KEY } from "./background/constants.js";
-import { buildTabTreeModel, flattenTabTreeTabs, getMoveTargets } from "./shared/tab-tree.js";
+import {
+    buildTabTreeModel,
+    flattenVisibleTabTreeTabs,
+    getMoveTargets,
+    getPinnedTabs,
+    getUnpinnedTabTree
+} from "./shared/tab-tree.js";
 
 const MODE_BROWSE = "browse";
 const MODE_MOVE = "move";
-const MODE_MOVE_ACTIVE = "move-active";
-const MODE_REQUEST_MAX_AGE_MS = 10000;
+const AUTO_REFRESH_DELAY_MS = 150;
 
 const state = {
     tree: [],
@@ -14,9 +18,10 @@ const state = {
     selectedTabId: null,
     selectedTargetIndex: 0,
     mode: MODE_BROWSE,
-    requestedMode: MODE_BROWSE,
     movingTabId: null
 };
+
+let refreshTimer = null;
 
 const elements = {
     summary: document.getElementById("summary"),
@@ -128,57 +133,8 @@ function moveTab(tabId, moveInfo) {
     });
 }
 
-function storageGet(keys) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.get(keys, (items) => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(items);
-        });
-    });
-}
-
-function storageRemove(keys) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.remove(keys, () => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve();
-        });
-    });
-}
-
-function normalizeMode(mode) {
-    return mode === MODE_MOVE_ACTIVE ? MODE_MOVE_ACTIVE : MODE_BROWSE;
-}
-
-async function takeRequestedMode() {
-    const queryMode = new URL(window.location.href).searchParams.get("mode");
-    if (queryMode)
-        return normalizeMode(queryMode);
-
-    const items = await storageGet([STORAGE_TAB_TREE_MODE_KEY]);
-    await storageRemove([STORAGE_TAB_TREE_MODE_KEY]);
-    const request = items[STORAGE_TAB_TREE_MODE_KEY];
-    if (!request || typeof request !== "object")
-        return MODE_BROWSE;
-    if (Date.now() - Number(request.createdAt || 0) > MODE_REQUEST_MAX_AGE_MS)
-        return MODE_BROWSE;
-    return normalizeMode(request.mode);
-}
-
 function tabIndexById(tabId) {
     return state.tabs.findIndex((tab) => tab.id === tabId);
-}
-
-function selectedTab() {
-    return state.tabs.find((tab) => tab.id === state.selectedTabId) || null;
 }
 
 function movingTab() {
@@ -189,6 +145,54 @@ function setStatus(text) {
     elements.status.textContent = text;
 }
 
+function focusTabList() {
+    elements.tabList.focus({ preventScroll: true });
+}
+
+function updateSelectedTabDom(options = {}) {
+    const rows = elements.tabList.querySelectorAll(".tab-row");
+    for (const row of rows) {
+        const selected = Number(row.dataset.tabId) === state.selectedTabId;
+        row.classList.toggle("selected", selected);
+        row.setAttribute("aria-selected", selected ? "true" : "false");
+        if (selected && options.scroll) {
+            row.scrollIntoView({ block: "nearest" });
+        }
+    }
+}
+
+function setSelectedTabId(tabId, options = {}) {
+    if (!state.tabs.some((tab) => tab.id === tabId))
+        return;
+    state.selectedTabId = tabId;
+    updateSelectedTabDom(options);
+    if (options.focusList)
+        focusTabList();
+}
+
+function updateSelectedTargetDom(options = {}) {
+    const rows = elements.tabList.querySelectorAll(".target-row");
+    rows.forEach((row, index) => {
+        const selected = index === state.selectedTargetIndex;
+        row.classList.toggle("selected", selected);
+        row.setAttribute("aria-selected", selected ? "true" : "false");
+        if (selected && options.scroll) {
+            row.scrollIntoView({ block: "nearest" });
+        }
+    });
+}
+
+function setSelectedTargetIndex(index, options = {}) {
+    const tab = movingTab();
+    const targets = tab ? getMoveTargets(state.tree, tab.windowId) : [];
+    if (targets.length === 0)
+        return;
+    state.selectedTargetIndex = Math.max(0, Math.min(index, targets.length - 1));
+    updateSelectedTargetDom(options);
+    if (options.focusList)
+        focusTabList();
+}
+
 function hostFromUrl(url) {
     try {
         return new URL(url).host;
@@ -196,6 +200,13 @@ function hostFromUrl(url) {
     catch {
         return url || "No URL";
     }
+}
+
+function tabMetaText(tab) {
+    const host = hostFromUrl(tab.url);
+    if (tab.pinned)
+        return `${tab.windowLabel || "Window"} - ${host}`;
+    return host;
 }
 
 function placeholderForTab(tab) {
@@ -241,12 +252,35 @@ function renderTabBadges(tab) {
     return node;
 }
 
+function actionButton(text, label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tab-action";
+    button.textContent = text;
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+    });
+    button.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    });
+    return button;
+}
+
 function renderTabRow(tab) {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = `tab-row${tab.id === state.selectedTabId ? " selected" : ""}${tab.isCurrentWindow ? "" : " other-window"}`;
+    const row = document.createElement("div");
+    row.className = [
+        "tab-row",
+        tab.pinned ? "pinned-row" : "",
+        tab.id === state.selectedTabId ? "selected" : "",
+        tab.isCurrentWindow ? "" : "other-window"
+    ].filter(Boolean).join(" ");
     row.dataset.tabId = String(tab.id);
     row.setAttribute("role", "option");
+    row.setAttribute("tabindex", "-1");
     row.setAttribute("aria-selected", tab.id === state.selectedTabId ? "true" : "false");
 
     const copy = document.createElement("span");
@@ -258,27 +292,62 @@ function renderTabRow(tab) {
 
     const url = document.createElement("span");
     url.className = "tab-url";
-    url.textContent = hostFromUrl(tab.url);
+    url.textContent = tabMetaText(tab);
 
     copy.append(title, url);
-    row.append(iconForTab(tab), copy, renderTabBadges(tab));
+    if (!tab.pinned) {
+        const actions = document.createElement("span");
+        actions.className = "tab-actions";
+        actions.append(
+            actionButton("Move", `Move ${tab.title}`, () => {
+                setSelectedTabId(tab.id);
+                startMove(tab.id);
+            }),
+            actionButton("Close", `Close ${tab.title}`, () => {
+                setSelectedTabId(tab.id);
+                closeTab(tab.id).catch(showActionError);
+            })
+        );
+        row.append(iconForTab(tab), copy, renderTabBadges(tab), actions);
+    }
+    else {
+        row.append(iconForTab(tab), copy, renderTabBadges(tab));
+    }
 
     row.addEventListener("mouseenter", () => {
-        state.selectedTabId = tab.id;
-        render();
+        setSelectedTabId(tab.id);
     });
     row.addEventListener("click", () => {
-        state.selectedTabId = tab.id;
-        activateSelectedTab().catch(showActionError);
+        setSelectedTabId(tab.id, { focusList: true });
+    });
+    row.addEventListener("dblclick", () => {
+        setSelectedTabId(tab.id);
+        activateTab(tab.id).catch(showActionError);
     });
 
     return row;
+}
+
+function renderWindowHeading(labelText, countValue, countLabel) {
+    const heading = document.createElement("div");
+    heading.className = "window-heading";
+
+    const label = document.createElement("span");
+    label.textContent = labelText;
+
+    const count = document.createElement("span");
+    count.className = "window-count";
+    count.textContent = `${countValue} ${countValue === 1 ? countLabel : `${countLabel}s`}`;
+
+    heading.append(label, count);
+    return heading;
 }
 
 function renderTargetRow(target, index) {
     const row = document.createElement("button");
     row.type = "button";
     row.className = `target-row${index === state.selectedTargetIndex ? " selected" : ""}`;
+    row.setAttribute("aria-selected", index === state.selectedTargetIndex ? "true" : "false");
 
     const copy = document.createElement("span");
     copy.className = "target-copy";
@@ -294,11 +363,10 @@ function renderTargetRow(target, index) {
     copy.append(title, meta);
     row.append(copy, badge("MOVE HERE", "current"));
     row.addEventListener("mouseenter", () => {
-        state.selectedTargetIndex = index;
-        render();
+        setSelectedTargetIndex(index);
     });
     row.addEventListener("click", () => {
-        state.selectedTargetIndex = index;
+        setSelectedTargetIndex(index, { focusList: true });
         confirmMove().catch(showActionError);
     });
 
@@ -315,19 +383,16 @@ function renderBrowseList() {
         return fragment;
     }
 
-    for (const win of state.tree) {
-        const heading = document.createElement("div");
-        heading.className = "window-heading";
+    const pinnedTabs = getPinnedTabs(state.tree);
+    if (pinnedTabs.length > 0) {
+        fragment.append(renderWindowHeading("Pinned tabs", pinnedTabs.length, "tab"));
+        for (const tab of pinnedTabs) {
+            fragment.append(renderTabRow(tab));
+        }
+    }
 
-        const label = document.createElement("span");
-        label.textContent = win.label;
-
-        const count = document.createElement("span");
-        count.className = "window-count";
-        count.textContent = `${win.tabs.length} ${win.tabs.length === 1 ? "tab" : "tabs"}`;
-
-        heading.append(label, count);
-        fragment.append(heading);
+    for (const win of getUnpinnedTabTree(state.tree)) {
+        fragment.append(renderWindowHeading(win.label, win.tabs.length, "tab"));
 
         for (const tab of win.tabs) {
             fragment.append(renderTabRow(tab));
@@ -341,6 +406,16 @@ function renderMoveList() {
     const fragment = document.createDocumentFragment();
     const tab = movingTab();
     const targets = tab ? getMoveTargets(state.tree, tab.windowId) : [];
+
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "cancel-move-button";
+    cancel.textContent = "Back to tabs";
+    cancel.addEventListener("click", () => {
+        cancelMove();
+    });
+    fragment.append(cancel);
+
     if (!tab || targets.length === 0) {
         const empty = document.createElement("div");
         empty.className = "empty";
@@ -372,6 +447,44 @@ function render() {
     }
 
     elements.tabList.replaceChildren(state.mode === MODE_MOVE ? renderMoveList() : renderBrowseList());
+    if (state.mode === MODE_MOVE) {
+        updateSelectedTargetDom();
+    }
+    else {
+        updateSelectedTabDom();
+    }
+}
+
+function scheduleRefresh() {
+    if (refreshTimer)
+        clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+        refreshTimer = null;
+        refreshTree({ keepSelection: true }).catch(showActionError);
+    }, AUTO_REFRESH_DELAY_MS);
+}
+
+function registerAutoRefreshHandlers() {
+    chrome.tabs.onCreated.addListener(scheduleRefresh);
+    chrome.tabs.onRemoved.addListener(scheduleRefresh);
+    chrome.tabs.onMoved.addListener(scheduleRefresh);
+    chrome.tabs.onAttached.addListener(scheduleRefresh);
+    chrome.tabs.onDetached.addListener(scheduleRefresh);
+    chrome.tabs.onActivated.addListener(scheduleRefresh);
+    chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+        if (changeInfo.title !== undefined
+            || changeInfo.url !== undefined
+            || changeInfo.favIconUrl !== undefined
+            || changeInfo.pinned !== undefined
+            || changeInfo.audible !== undefined
+            || changeInfo.mutedInfo !== undefined
+            || changeInfo.status === "complete") {
+            scheduleRefresh();
+        }
+    });
+    chrome.windows.onCreated.addListener(scheduleRefresh);
+    chrome.windows.onRemoved.addListener(scheduleRefresh);
+    chrome.windows.onFocusChanged.addListener(scheduleRefresh);
 }
 
 function showActionError(error) {
@@ -415,7 +528,7 @@ async function refreshTree(options = {}) {
     state.currentWindowId = context.currentWindowId;
     state.activeTabId = context.activeTabId;
     state.tree = buildTabTreeModel(windows, context.currentWindowId);
-    state.tabs = flattenTabTreeTabs(state.tree);
+    state.tabs = flattenVisibleTabTreeTabs(state.tree);
 
     let nextTabId = options.preferActive ? context.activeTabId : previousSelection;
     if (!state.tabs.some((tab) => tab.id === nextTabId)) {
@@ -432,17 +545,16 @@ async function refreshTree(options = {}) {
     render();
 }
 
-async function activateSelectedTab() {
-    const tab = selectedTab();
+async function activateTab(tabId) {
+    const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab)
         return;
-    await updateWindow(tab.windowId, { focused: true });
     await updateTab(tab.id, { active: true });
-    window.close();
+    await updateWindow(tab.windowId, { focused: true });
 }
 
-async function closeSelectedTab() {
-    const tab = selectedTab();
+async function closeTab(tabId) {
+    const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab)
         return;
     const oldIndex = tabIndexById(tab.id);
@@ -484,101 +596,14 @@ async function confirmMove() {
     }
 
     await moveTab(tab.id, { windowId: target.id, index: -1 });
-    await updateWindow(target.id, { focused: true });
     await updateTab(tab.id, { active: true });
+    await updateWindow(target.id, { focused: true });
 
     state.mode = MODE_BROWSE;
     state.movingTabId = null;
     state.selectedTabId = tab.id;
     await refreshTree({ keepSelection: true });
     setStatus("Moved tab.");
-    window.close();
-}
-
-function moveSelection(delta) {
-    if (state.tabs.length === 0)
-        return;
-    const currentIndex = tabIndexById(state.selectedTabId);
-    if (currentIndex === -1) {
-        state.selectedTabId = state.tabs[delta > 0 ? 0 : state.tabs.length - 1].id;
-        render();
-        return;
-    }
-    const nextIndex = (currentIndex + delta + state.tabs.length) % state.tabs.length;
-    state.selectedTabId = state.tabs[nextIndex].id;
-    render();
-}
-
-function moveTargetSelection(delta) {
-    const tab = movingTab();
-    const targets = tab ? getMoveTargets(state.tree, tab.windowId) : [];
-    if (targets.length === 0)
-        return;
-    state.selectedTargetIndex = (state.selectedTargetIndex + delta + targets.length) % targets.length;
-    render();
-}
-
-function handleKeydown(event) {
-    const key = event.key;
-    const commandKey = event.ctrlKey || event.metaKey;
-
-    if (state.mode === MODE_MOVE) {
-        if (key === "ArrowDown" || key === "j") {
-            event.preventDefault();
-            moveTargetSelection(1);
-            return;
-        }
-        if (key === "ArrowUp" || key === "k") {
-            event.preventDefault();
-            moveTargetSelection(-1);
-            return;
-        }
-        if (key === "Enter") {
-            event.preventDefault();
-            confirmMove().catch(showActionError);
-            return;
-        }
-        if (key === "Escape") {
-            event.preventDefault();
-            cancelMove();
-        }
-        return;
-    }
-
-    if (key === "ArrowDown" || key === "j") {
-        event.preventDefault();
-        moveSelection(1);
-        return;
-    }
-    if (key === "ArrowUp" || key === "k") {
-        event.preventDefault();
-        moveSelection(-1);
-        return;
-    }
-    if (key === "Enter") {
-        event.preventDefault();
-        activateSelectedTab().catch(showActionError);
-        return;
-    }
-    if (key === "m" || key === "M") {
-        event.preventDefault();
-        startMove(state.selectedTabId);
-        return;
-    }
-    if (key === "Delete" || key === "Backspace" || (commandKey && key.toLowerCase() === "w")) {
-        event.preventDefault();
-        closeSelectedTab().catch(showActionError);
-        return;
-    }
-    if (key === "r" || key === "R") {
-        event.preventDefault();
-        refreshTree({ keepSelection: true }).catch(showActionError);
-        return;
-    }
-    if (key === "Escape") {
-        event.preventDefault();
-        window.close();
-    }
 }
 
 async function init() {
@@ -591,16 +616,9 @@ async function init() {
     elements.refresh.addEventListener("click", () => {
         refreshTree({ keepSelection: true }).catch(showActionError);
     });
-    document.addEventListener("keydown", handleKeydown);
+    registerAutoRefreshHandlers();
 
-    state.requestedMode = await takeRequestedMode();
     await refreshTree({ preferActive: true });
-
-    if (state.requestedMode === MODE_MOVE_ACTIVE && state.activeTabId) {
-        startMove(state.activeTabId);
-    }
-
-    elements.tabList.focus();
 }
 
 init().catch(showActionError);

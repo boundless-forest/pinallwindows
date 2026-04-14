@@ -10,7 +10,14 @@ import {
   tabToCanonicalEntry
 } from "../src/shared/tab-utils.js";
 import { computeSyncPlan } from "../src/shared/sync-plan.js";
-import { buildTabTreeModel, flattenTabTreeTabs, getMoveTargets } from "../src/shared/tab-tree.js";
+import {
+  buildTabTreeModel,
+  flattenTabTreeTabs,
+  flattenVisibleTabTreeTabs,
+  getMoveTargets,
+  getPinnedTabs,
+  getUnpinnedTabTree
+} from "../src/shared/tab-tree.js";
 
 test("getTabUrl prefers url then pendingUrl", () => {
   assert.equal(getTabUrl({ url: "https://a.com" }), "https://a.com");
@@ -104,7 +111,9 @@ test("buildTabTreeModel filters popup windows and marks current-window tabs", ()
   assert.equal(tree[0].label, "Current window");
   assert.equal(tree[0].tabs[0].id, 20);
   assert.equal(tree[0].tabs[0].isCurrentWindow, true);
+  assert.equal(tree[0].tabs[0].windowLabel, "Current window");
   assert.equal(tree[1].tabs[0].isCurrentWindow, false);
+  assert.equal(tree[1].tabs[0].windowLabel, "Window 2");
 });
 
 test("flattenTabTreeTabs and getMoveTargets support tab move picker", () => {
@@ -122,4 +131,68 @@ test("flattenTabTreeTabs and getMoveTargets support tab move picker", () => {
       tabCount: 1
     }
   ]);
+});
+
+test("tab tree exposes every pinned tab by window and hides pinned tabs from window sections", () => {
+  const tree = buildTabTreeModel([
+    {
+      id: 10,
+      type: "normal",
+      tabs: [
+        { id: 1, index: 0, pinned: true, title: "Pinned A", url: "https://a.com/one" },
+        { id: 2, index: 1, title: "Regular A", url: "https://regular-a.com" }
+      ]
+    },
+    {
+      id: 20,
+      type: "normal",
+      tabs: [
+        { id: 3, index: 0, pinned: true, title: "Pinned A copy", url: "https://a.com/two" },
+        { id: 4, index: 1, title: "Regular B", url: "https://regular-b.com" }
+      ]
+    }
+  ], 20);
+
+  assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.id), [3, 1]);
+  assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.windowLabel), ["Current window", "Window 2"]);
+  assert.deepEqual(getUnpinnedTabTree(tree).flatMap((win) => win.tabs.map((tab) => tab.id)), [4, 2]);
+  assert.deepEqual(flattenVisibleTabTreeTabs(tree).map((tab) => tab.id), [3, 1, 4, 2]);
+});
+
+test("tab tree keeps pinned copies from each window in visible order", () => {
+  const tree = buildTabTreeModel([
+    {
+      id: 10,
+      type: "normal",
+      tabs: [
+        { id: 1, index: 0, pinned: true, title: "Pinned A", url: "https://a.com/one" },
+        { id: 2, index: 1, pinned: true, title: "Pinned B", url: "https://b.com/one" }
+      ]
+    },
+    {
+      id: 20,
+      type: "normal",
+      tabs: [
+        { id: 3, index: 0, pinned: true, title: "Pinned A copy", url: "https://a.com/two" },
+        { id: 4, index: 1, pinned: true, title: "Pinned C", url: "https://c.com/one" }
+      ]
+    }
+  ], 10);
+
+  assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.id), [1, 2, 3, 4]);
+});
+
+test("tab tree treats non-http pinned tabs as distinct exact URLs", () => {
+  const tree = buildTabTreeModel([
+    {
+      id: 10,
+      type: "normal",
+      tabs: [
+        { id: 1, index: 0, pinned: true, title: "Extensions", url: "chrome://extensions" },
+        { id: 2, index: 1, pinned: true, title: "Settings", url: "chrome://settings" }
+      ]
+    }
+  ], 10);
+
+  assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.id), [1, 2]);
 });

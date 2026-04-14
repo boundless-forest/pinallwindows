@@ -28,6 +28,7 @@ export function buildTabTreeModel(windows, currentWindowId) {
             .map((tab) => ({
                 id: tab.id,
                 windowId: win.id,
+                windowLabel: isCurrentWindow ? "Current window" : `Window ${index + 1}`,
                 title: tab.title || getTabUrl(tab) || "Untitled",
                 url: getTabUrl(tab),
                 favIconUrl: tab.favIconUrl || "",
@@ -57,6 +58,24 @@ export function flattenTabTreeTabs(tree) {
         }
     }
     return out;
+}
+
+export function getPinnedTabs(tree) {
+    return flattenTabTreeTabs(tree).filter((tab) => tab.pinned);
+}
+
+export function getUnpinnedTabTree(tree) {
+    return (Array.isArray(tree) ? tree : []).map((win) => ({
+        ...win,
+        tabs: (win.tabs || []).filter((tab) => !tab.pinned)
+    }));
+}
+
+export function flattenVisibleTabTreeTabs(tree) {
+    return [
+        ...getPinnedTabs(tree),
+        ...flattenTabTreeTabs(getUnpinnedTabTree(tree))
+    ];
 }
 
 export function getMoveTargets(tree, sourceWindowId) {

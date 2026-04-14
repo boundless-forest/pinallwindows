@@ -1,7 +1,6 @@
 export const STORAGE_ORIGINS_KEY = "pinallwindows.origins";
 export const STORAGE_INITIALIZED_KEY = "pinallwindows.initialized";
 export const STORAGE_LEGACY_CANONICAL_KEY = "pinallwindows.canonical";
-export const STORAGE_TAB_TREE_MODE_KEY = "pinallwindows.tabTreeMode";
 export const MESSAGE_CLEAR_STORAGE = "PINALLWINDOWS_CLEAR_STORAGE";
 export const SYNC_DELAY_DEFAULT_MS = 400;
 export const SYNC_DELAY_FAST_MS = 150;

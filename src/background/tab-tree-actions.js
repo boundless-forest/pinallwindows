@@ -1,14 +1,12 @@
-import { STORAGE_TAB_TREE_MODE_KEY } from "./constants.js";
-
 function runtimeError() {
     if (!chrome.runtime.lastError)
         return null;
     return new Error(chrome.runtime.lastError.message);
 }
 
-function storageSet(values) {
+function clearActionPopup() {
     return new Promise((resolve, reject) => {
-        chrome.storage.local.set(values, () => {
+        chrome.action.setPopup({ popup: "" }, () => {
             const error = runtimeError();
             if (error) {
                 reject(error);
@@ -19,33 +17,9 @@ function storageSet(values) {
     });
 }
 
-function openActionPopup() {
+function getLastFocusedWindow() {
     return new Promise((resolve, reject) => {
-        if (!chrome.action?.openPopup) {
-            reject(new Error("chrome.action.openPopup is unavailable"));
-            return;
-        }
-        chrome.action.openPopup(() => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve();
-        });
-    });
-}
-
-function createTabTreeWindow(mode) {
-    return new Promise((resolve, reject) => {
-        const url = chrome.runtime.getURL(`tab-tree.html?mode=${encodeURIComponent(mode)}`);
-        chrome.windows.create({
-            url,
-            type: "popup",
-            width: 480,
-            height: 640,
-            focused: true
-        }, (win) => {
+        chrome.windows.getLastFocused({ windowTypes: ["normal"] }, (win) => {
             const error = runtimeError();
             if (error) {
                 reject(error);
@@ -56,28 +30,34 @@ function createTabTreeWindow(mode) {
     });
 }
 
-async function openTabTree(mode) {
-    await storageSet({
-        [STORAGE_TAB_TREE_MODE_KEY]: {
-            mode,
-            createdAt: Date.now()
-        }
-    });
-
-    try {
-        await openActionPopup();
-    }
-    catch {
-        await createTabTreeWindow(mode);
-    }
+async function enableActionSidePanel() {
+    if (!chrome.sidePanel?.setPanelBehavior)
+        return;
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 }
 
-export function registerTabTreeCommandHandlers() {
+async function openSidePanel() {
+    if (!chrome.sidePanel?.open)
+        throw new Error("chrome.sidePanel.open is unavailable");
+    const win = await getLastFocusedWindow();
+    if (typeof win?.id !== "number")
+        throw new Error("No normal Chrome window is available");
+    await chrome.sidePanel.open({ windowId: win.id });
+}
+
+export function registerTabTreeActionHandlers() {
+    Promise.all([
+        clearActionPopup(),
+        enableActionSidePanel()
+    ]).catch((error) => {
+        console.error("PinAllWindows: failed to enable side panel action", { error });
+    });
+
     chrome.commands.onCommand.addListener((command) => {
-        if (command !== "move-active-tab")
+        if (command !== "open-tab-tree")
             return;
-        openTabTree("move-active").catch((error) => {
-            console.error("PinAllWindows: failed to open tab move picker", { error });
+        openSidePanel().catch((error) => {
+            console.error("PinAllWindows: failed to open tab tree side panel", { error });
         });
     });
 }

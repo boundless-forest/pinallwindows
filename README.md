@@ -33,11 +33,12 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 - Options action:
   - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
 - Tab tree:
-  - Click the PinAllWindows toolbar icon, or use the extension action shortcut.
-  - Up/Down selects tabs, Enter switches to the selected tab, Delete closes it.
-  - Tabs outside the current window are marked `OTHER`.
-  - Press `M` on a selected tab to choose another normal window and move it there.
-  - The `Move active tab to another window` command opens the same picker directly in move mode.
+  - Click the PinAllWindows toolbar icon, or use `Alt+Shift+P`.
+  - The tree opens in Chrome side panel and stays there until the user closes the side panel.
+  - Double-click switches to a tab in its window.
+  - Pinned rows are listed once per window so users can jump to a pinned tab in a specific window.
+  - Pinned rows do not show `Move` or `Close`; regular tabs can use both row actions.
+  - The list auto-updates on tab/window changes; `Refresh` remains as a forced refresh.
 
 How to switch the pinned target for an app:
 - Unpin the current pinned tab for that app.
@@ -70,12 +71,16 @@ Switching the pinned target for an app:
 - Verify all windows converge to the new pinned app tab.
 
 Tab tree:
-- Click the extension icon and verify tabs from all normal windows appear.
+- Click the extension icon and verify the Chrome side panel opens with tabs from all normal windows.
+- Use `Alt+Shift+P` and verify the Chrome side panel opens.
 - Verify tabs from other windows show the `OTHER` marker.
-- Use Up/Down and Enter to switch to a tab in another window.
-- Reopen the tab tree, select a tab, press Delete, and verify it closes.
-- Reopen the tab tree, select a tab, press `M`, choose a destination window, and verify the tab moves and focuses.
-- Configure and use the `Move active tab to another window` command from `chrome://extensions/shortcuts`.
+- Verify pinned tabs appear per window and do not show `Move` or `Close`.
+- Double-click a tab under `Current window` and verify it activates that tab.
+- Double-click a tab under another window and verify Chrome focuses that window and activates the tab.
+- Reopen the tab tree, click `Close`, and verify the tab closes.
+- Reopen the tab tree, click `Move`, choose a destination window, and verify the tab moves and focuses.
+- Start a move, click `Back to tabs`, and verify the tree list returns without moving the tab.
+- Open or close a tab while the tree is open and verify the list updates without pressing `Refresh`.
 
 ## Chrome Web Store
 
