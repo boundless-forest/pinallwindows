@@ -42,18 +42,6 @@ export function storageRemove(keys) {
         });
     });
 }
-export function queryPinnedTabs() {
-    return new Promise((resolve, reject) => {
-        chrome.tabs.query({ pinned: true }, (tabs) => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(tabs);
-        });
-    });
-}
 export function queryTabsInWindow(windowId) {
     return new Promise((resolve, reject) => {
         chrome.tabs.query({ windowId }, (tabs) => {
@@ -78,6 +66,29 @@ export function getAllNormalWindows() {
             resolve(windows);
         });
     });
+}
+export function getAllNormalWindowsWithTabs() {
+    return new Promise((resolve, reject) => {
+        chrome.windows.getAll({ populate: true, windowTypes: ["normal"] }, (windows) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(windows);
+        });
+    });
+}
+export async function queryPinnedTabsInNormalWindows() {
+    const windows = await getAllNormalWindowsWithTabs();
+    const pinnedTabs = [];
+    for (const win of windows) {
+        for (const tab of win.tabs || []) {
+            if (tab.pinned)
+                pinnedTabs.push(tab);
+        }
+    }
+    return pinnedTabs;
 }
 export function getWindow(windowId) {
     return new Promise((resolve) => {

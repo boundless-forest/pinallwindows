@@ -4,6 +4,7 @@ Sync pinned apps across all open Chrome windows (same machine, same profile), us
 
 - Pin a tab in any window → that app (site/origin) becomes pinned in every window.
 - Unpin a tab in any window → that app is unpinned/removed everywhere.
+- Click the extension icon or use the action shortcut to open a keyboard-friendly tab tree across all normal windows.
 
 In other words: PinAllWindows syncs pinned items by origin (scheme + host), not by exact URL.
 
@@ -31,6 +32,12 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
   - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAllWindows will keep one and remove duplicates.
 - Options action:
   - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
+- Tab tree:
+  - Click the PinAllWindows toolbar icon, or use the extension action shortcut.
+  - Up/Down selects tabs, Enter switches to the selected tab, Delete closes it.
+  - Tabs outside the current window are marked `OTHER`.
+  - Press `M` on a selected tab to choose another normal window and move it there.
+  - The `Move active tab to another window` command opens the same picker directly in move mode.
 
 How to switch the pinned target for an app:
 - Unpin the current pinned tab for that app.
@@ -61,6 +68,14 @@ Switching the pinned target for an app:
 - Unpin the existing pinned tab for that origin.
 - Pin the new page you want.
 - Verify all windows converge to the new pinned app tab.
+
+Tab tree:
+- Click the extension icon and verify tabs from all normal windows appear.
+- Verify tabs from other windows show the `OTHER` marker.
+- Use Up/Down and Enter to switch to a tab in another window.
+- Reopen the tab tree, select a tab, press Delete, and verify it closes.
+- Reopen the tab tree, select a tab, press `M`, choose a destination window, and verify the tab moves and focuses.
+- Configure and use the `Move active tab to another window` command from `chrome://extensions/shortcuts`.
 
 ## Chrome Web Store
 
@@ -104,6 +119,7 @@ Other store materials
 
 - Chrome does not provide an atomic "pin across all windows" primitive; this extension syncs via events, so you may see brief delays.
 - Identity is origin-based (scheme + host). Different pages under the same origin are treated as the same app.
+- Pinned sync is intentionally limited to normal Chrome windows. Popup/devtools/app windows are ignored when seeding and handling pin/unpin events.
 
 ## License
 

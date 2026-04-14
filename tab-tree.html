@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PinAllWindows Tabs</title>
+    <link rel="stylesheet" href="src/tab-tree.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="title-wrap">
+          <h1>Tabs</h1>
+          <p id="summary" class="summary">Loading tabs...</p>
+        </div>
+        <button id="refresh" class="refresh-button" type="button">Refresh</button>
+      </header>
+
+      <div id="mode-bar" class="mode-bar" hidden></div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="tab-list" class="tab-list" role="listbox" tabindex="0" aria-label="All tabs"></div>
+
+      <footer class="help">
+        Up/Down select | Enter open | M move | Delete close | Esc cancel
+      </footer>
+    </main>
+
+    <script type="module" src="src/tab-tree.js"></script>
+  </body>
+</html>

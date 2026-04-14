@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PinAllWindows",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Synchronize pinned apps across all Chrome windows.",
   "permissions": ["tabs", "windows", "storage"],
   "background": {
@@ -10,9 +10,26 @@
   },
   "action": {
     "default_title": "PinAllWindows",
+    "default_popup": "tab-tree.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open the tab tree"
+    },
+    "move-active-tab": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Period",
+        "mac": "Command+Shift+Period"
+      },
+      "description": "Move the active tab to another window"
     }
   },
   "icons": {

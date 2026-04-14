@@ -10,6 +10,7 @@ import {
   tabToCanonicalEntry
 } from "../src/shared/tab-utils.js";
 import { computeSyncPlan } from "../src/shared/sync-plan.js";
+import { buildTabTreeModel, flattenTabTreeTabs, getMoveTargets } from "../src/shared/tab-tree.js";
 
 test("getTabUrl prefers url then pendingUrl", () => {
   assert.equal(getTabUrl({ url: "https://a.com" }), "https://a.com");
@@ -74,4 +75,51 @@ test("computeSyncPlan creates missing tabs and removes duplicates", () => {
 
   assert.deepEqual(plan.create, [{ key: "origin:https://b.com", url: "https://b.com/start" }]);
   assert.deepEqual(new Set(plan.removeTabIds), new Set([2, 3]));
+});
+
+test("buildTabTreeModel filters popup windows and marks current-window tabs", () => {
+  const tree = buildTabTreeModel([
+    {
+      id: 2,
+      type: "normal",
+      tabs: [
+        { id: 21, index: 1, title: "Later", url: "https://b.com/later" },
+        { id: 20, index: 0, title: "Now", url: "https://b.com/now", active: true }
+      ]
+    },
+    {
+      id: 1,
+      type: "normal",
+      tabs: [{ id: 10, index: 0, title: "Other", url: "https://a.com" }]
+    },
+    {
+      id: 3,
+      type: "popup",
+      tabs: [{ id: 30, index: 0, title: "Popup", url: "https://popup.com" }]
+    }
+  ], 2);
+
+  assert.equal(tree.length, 2);
+  assert.equal(tree[0].id, 2);
+  assert.equal(tree[0].label, "Current window");
+  assert.equal(tree[0].tabs[0].id, 20);
+  assert.equal(tree[0].tabs[0].isCurrentWindow, true);
+  assert.equal(tree[1].tabs[0].isCurrentWindow, false);
+});
+
+test("flattenTabTreeTabs and getMoveTargets support tab move picker", () => {
+  const tree = buildTabTreeModel([
+    { id: 10, type: "normal", tabs: [{ id: 1, index: 0, title: "A", url: "https://a.com" }] },
+    { id: 20, type: "normal", tabs: [{ id: 2, index: 0, title: "B", url: "https://b.com" }] }
+  ], 10);
+
+  assert.deepEqual(flattenTabTreeTabs(tree).map((tab) => tab.id), [1, 2]);
+  assert.deepEqual(getMoveTargets(tree, 10), [
+    {
+      id: 20,
+      label: "Window 2",
+      isCurrentWindow: false,
+      tabCount: 1
+    }
+  ]);
 });

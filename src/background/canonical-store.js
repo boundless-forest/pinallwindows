@@ -1,5 +1,5 @@
 import { STORAGE_INITIALIZED_KEY, STORAGE_LEGACY_CANONICAL_KEY, STORAGE_ORIGINS_KEY } from "./constants.js";
-import { queryPinnedTabs, storageGet, storageRemove, storageSet } from "./chrome-api.js";
+import { queryPinnedTabsInNormalWindows, storageGet, storageRemove, storageSet } from "./chrome-api.js";
 import { seedUrlForCanonicalKey, tabToCanonicalEntry } from "../shared/tab-utils.js";
 // Canonical store persists only a list of origins in chrome.storage.local.
 // Runtime sync logic still consumes a Map<originKey, seedUrl>, which we derive
@@ -101,8 +101,8 @@ export class CanonicalStore {
         });
     }
     async seedFromPinnedTabs() {
-        // First-run behavior: use currently pinned tabs as baseline.
-        const tabs = await queryPinnedTabs();
+        // First-run behavior: use pinned tabs from normal browser windows as baseline.
+        const tabs = await queryPinnedTabsInNormalWindows();
         const canonical = new Map();
         for (const tab of tabs) {
             const entry = tabToCanonicalEntry(tab);

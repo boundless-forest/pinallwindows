@@ -34,6 +34,12 @@ export function createSyncController(canonicalStore) {
     function eventsSuppressed() {
         return nowMs() < suppressEventsUntil;
     }
+    async function isTabInSyncWindow(tab) {
+        if (!tab || typeof tab.windowId !== "number")
+            return false;
+        const win = await getWindow(tab.windowId);
+        return isSyncWindow(win);
+    }
     // Sync one window to canonical state:
     // - create missing pinned apps
     // - remove duplicates and non-canonical pinned tabs
@@ -120,6 +126,8 @@ export function createSyncController(canonicalStore) {
         // Ignore tab events triggered by our own create/remove operations.
         if (eventsSuppressed())
             return;
+        if (!(await isTabInSyncWindow(tab)))
+            return;
         const entry = tabToCanonicalEntry(tab);
         if (!entry)
             return;
@@ -141,6 +149,8 @@ export function createSyncController(canonicalStore) {
         const latestTab = await getTab(tab.id);
         // Tab is gone: likely teardown from closing window/tab, not explicit unpin intent.
         if (!latestTab)
+            return;
+        if (!(await isTabInSyncWindow(latestTab)))
             return;
         if (latestTab.pinned)
             return;
@@ -180,7 +190,14 @@ export function createSyncController(canonicalStore) {
             if (!tab.pinned || eventsSuppressed())
                 return;
             // Covers cases like session restore creating pinned tabs.
-            scheduleSync(SYNC_DELAY_ON_PINNED_TAB_CREATED_MS, "pinned_created");
+            isTabInSyncWindow(tab)
+                .then((syncable) => {
+                    if (syncable && !eventsSuppressed())
+                        scheduleSync(SYNC_DELAY_ON_PINNED_TAB_CREATED_MS, "pinned_created");
+                })
+                .catch((error) => {
+                    console.error("PinAllWindows: failed to inspect created pinned tab", { error });
+                });
         });
         chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             const type = getMessageType(msg);
