@@ -67,6 +67,11 @@ export class CanonicalStore {
         // Keep initialized=true so we do not auto-seed again after explicit clear.
         await this.persist(new Map(), true);
     }
+    async rebuildFromPinnedTabs() {
+        const rebuilt = await this.seedFromPinnedTabs();
+        await this.persist(rebuilt, true);
+        return rebuilt;
+    }
     async ensureInitialized() {
         const snapshot = await this.loadSnapshot();
         if (snapshot.initialized)

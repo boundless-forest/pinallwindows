@@ -18,6 +18,8 @@ Permissions
   - Used to enumerate open windows and apply the same pinned apps to each window.
 - storage
   - Used to persist the canonical set of pinned apps.
+- sidePanel
+  - Used to show the tab tree inside Chrome's side panel.
 
 Contact
 - If you have questions, contact the developer.

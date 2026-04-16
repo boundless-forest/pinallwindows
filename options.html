@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PinAllWindows Options</title>
     <style>
-      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-      button { padding: 6px 10px; }
+      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; max-width: 620px; }
+      button { border: 1px solid #bbb; border-radius: 6px; cursor: pointer; padding: 7px 11px; }
+      button:disabled { cursor: wait; opacity: 0.65; }
+      .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
       .row { margin: 12px 0; }
       .muted { color: #666; }
-      .status { margin-left: 8px; }
+      .status { display: inline-block; margin-left: 8px; min-height: 20px; }
     </style>
   </head>
   <body>
@@ -21,13 +23,15 @@
       Union mode means: pin anywhere -> appears everywhere; unpin anywhere -> removed everywhere.
     </div>
 
-    <div class="row">
+    <div class="button-row">
+      <button id="repair-storage">Repair pinned tabs</button>
       <button id="clear-storage">Clear pinned storage</button>
       <span id="status" class="status muted"></span>
     </div>
 
     <div class="row muted">
-      This clears the extension's saved pinned set and applies an empty sync state to all normal windows.
+      Repair rebuilds the saved pinned set from your current pinned tabs, keeps one app per origin, and syncs all normal windows.
+      Clear removes the saved pinned set and applies an empty sync state.
     </div>
 
     <script type="module" src="src/options.js"></script>

@@ -1,5 +1,5 @@
 import { createPinnedTab, getAllNormalWindows, getTab, getWindow, queryTabsInWindow, removeTabs } from "./chrome-api.js";
-import { MESSAGE_CLEAR_STORAGE, MUTATION_SUPPRESS_MS, SYNC_DELAY_DEFAULT_MS, SYNC_DELAY_FAST_MS, SYNC_DELAY_ON_PINNED_TAB_CREATED_MS, SYNC_DELAY_ON_WINDOW_CREATED_MS, UNPIN_CONFIRM_DELAY_MS } from "./constants.js";
+import { MESSAGE_CLEAR_STORAGE, MESSAGE_REPAIR_PINNED_STORAGE, MUTATION_SUPPRESS_MS, SYNC_DELAY_DEFAULT_MS, SYNC_DELAY_FAST_MS, SYNC_DELAY_ON_PINNED_TAB_CREATED_MS, SYNC_DELAY_ON_WINDOW_CREATED_MS, UNPIN_CONFIRM_DELAY_MS } from "./constants.js";
 import { computeSyncPlan } from "../shared/sync-plan.js";
 import { isSyncWindow, seedUrlForCanonicalKey, tabToCanonicalEntry } from "../shared/tab-utils.js";
 // Sync controller responsibilities:
@@ -122,6 +122,12 @@ export function createSyncController(canonicalStore) {
         await canonicalStore.clear();
         await runSync("clear_storage");
     }
+    async function repairPinnedStorage() {
+        // Rebuild canonical state from currently pinned normal-window tabs,
+        // deduping by origin, then force every normal window to converge.
+        await canonicalStore.rebuildFromPinnedTabs();
+        await runSync("repair_storage");
+    }
     async function handlePinnedStateChange(tab, pinned) {
         // Ignore tab events triggered by our own create/remove operations.
         if (eventsSuppressed())
@@ -201,10 +207,11 @@ export function createSyncController(canonicalStore) {
         });
         chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             const type = getMessageType(msg);
-            if (type !== MESSAGE_CLEAR_STORAGE)
+            if (type !== MESSAGE_CLEAR_STORAGE && type !== MESSAGE_REPAIR_PINNED_STORAGE)
                 return;
             // Async response path: return true so sendResponse stays alive.
-            clearPinnedStorage()
+            const action = type === MESSAGE_CLEAR_STORAGE ? clearPinnedStorage : repairPinnedStorage;
+            action()
                 .then(() => sendResponse({ ok: true }))
                 .catch((error) => sendResponse({ ok: false, error: String(error) }));
             return true;
@@ -214,6 +221,7 @@ export function createSyncController(canonicalStore) {
         registerEventHandlers,
         runSync,
         scheduleSync,
-        clearPinnedStorage
+        clearPinnedStorage,
+        repairPinnedStorage
     };
 }

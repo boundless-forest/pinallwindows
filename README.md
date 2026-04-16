@@ -11,14 +11,14 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 ## Install (developer mode)
 
 1. Install dependencies:
-   - `cd /home/bear-wang/coding/pinallwindows`
+   - `cd /Users/bear-wang/Working/pinallwindows`
    - `pnpm install`
 2. Open `chrome://extensions`
 3. Enable Developer mode
 4. Click Load unpacked
 5. Select this folder:
 
-   `/home/bear-wang/coding/pinallwindows`
+   `/Users/bear-wang/Working/pinallwindows`
 
 ## Behavior
 
@@ -31,6 +31,7 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 - One pinned tab per app per window:
   - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAllWindows will keep one and remove duplicates.
 - Options action:
+  - `Repair pinned tabs` rebuilds the saved pinned set from currently pinned tabs, dedupes by origin, and syncs all normal windows.
   - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
 - Tab tree:
   - Click the PinAllWindows toolbar icon, or use `Alt+Shift+P`.
@@ -50,7 +51,7 @@ Important: Closing a pinned tab in one window does not remove it globally; it ma
 
 Unit tests (pure helpers only):
 
-- `cd /home/bear-wang/coding/pinallwindows`
+- `cd /Users/bear-wang/Working/pinallwindows`
 - `pnpm test`
 
 Manual integration test:
@@ -64,6 +65,11 @@ App-level behavior (origin-based):
 - In window A, open two different pages under the same origin (example: two different Gemini chats).
 - Pin both of them.
 - Verify each window ends up with exactly one pinned tab for that origin (duplicates removed).
+
+Repair action:
+- Create or keep two pinned tabs from the same origin in one normal window.
+- Open the extension options page and click `Repair pinned tabs`.
+- Verify every normal window has one pinned tab for that origin and the same pinned-origin set.
 
 Switching the pinned target for an app:
 - Unpin the existing pinned tab for that origin.
@@ -98,7 +104,7 @@ This method avoids manual copying. It creates a zip from the repo root and exclu
 2. Create the zip
 From the repo root:
 
-- `cd /home/bear-wang/coding/pinallwindows`
+- `cd /Users/bear-wang/Working/pinallwindows`
 - `rm -f pinallwindows.zip`
 - `zip -r pinallwindows.zip . \
   -x ".git/*" \

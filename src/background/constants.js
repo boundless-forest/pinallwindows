@@ -2,6 +2,7 @@ export const STORAGE_ORIGINS_KEY = "pinallwindows.origins";
 export const STORAGE_INITIALIZED_KEY = "pinallwindows.initialized";
 export const STORAGE_LEGACY_CANONICAL_KEY = "pinallwindows.canonical";
 export const MESSAGE_CLEAR_STORAGE = "PINALLWINDOWS_CLEAR_STORAGE";
+export const MESSAGE_REPAIR_PINNED_STORAGE = "PINALLWINDOWS_REPAIR_PINNED_STORAGE";
 export const SYNC_DELAY_DEFAULT_MS = 400;
 export const SYNC_DELAY_FAST_MS = 150;
 export const SYNC_DELAY_ON_WINDOW_CREATED_MS = 200;
