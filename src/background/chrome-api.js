@@ -1,3 +1,5 @@
+import { isSyncWindow } from "../shared/tab-utils.js";
+
 // Chrome extension APIs are callback-based and report failures through
 // chrome.runtime.lastError instead of throwing. These helpers normalize that
 // behavior into Promise-based calls used by the controller/store layers.
@@ -63,7 +65,7 @@ export function getAllNormalWindows() {
                 reject(error);
                 return;
             }
-            resolve(windows);
+            resolve(windows.filter(isSyncWindow));
         });
     });
 }
@@ -75,7 +77,7 @@ export function getAllNormalWindowsWithTabs() {
                 reject(error);
                 return;
             }
-            resolve(windows);
+            resolve(windows.filter(isSyncWindow));
         });
     });
 }

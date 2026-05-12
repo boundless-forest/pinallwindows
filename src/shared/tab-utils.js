@@ -58,5 +58,5 @@ export function tabToCanonicalEntry(tab) {
     };
 }
 export function isSyncWindow(win) {
-    return Boolean(win && win.type === "normal");
+    return Boolean(win && win.type === "normal" && win.alwaysOnTop !== true);
 }

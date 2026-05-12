@@ -60,10 +60,28 @@ test("tabToCanonicalEntry returns null for non-syncable URLs", () => {
   });
 });
 
-test("isSyncWindow allows only normal windows", () => {
+test("isSyncWindow allows only syncable normal browser windows", () => {
   assert.equal(isSyncWindow({ type: "normal" }), true);
+  assert.equal(isSyncWindow({ type: "normal", alwaysOnTop: false }), true);
+  assert.equal(isSyncWindow({ type: "normal", alwaysOnTop: true }), false);
   assert.equal(isSyncWindow({ type: "popup" }), false);
   assert.equal(isSyncWindow(null), false);
+});
+
+test("isSyncWindow excludes Google Meet automatic picture-in-picture windows", () => {
+  assert.equal(isSyncWindow({
+    type: "normal",
+    alwaysOnTop: true,
+    width: 360,
+    height: 240,
+    tabs: [
+      {
+        id: 1,
+        title: "Google Meet",
+        url: "https://meet.google.com/abc-defg-hij"
+      }
+    ]
+  }), false);
 });
 
 test("computeSyncPlan creates missing tabs and removes duplicates", () => {
@@ -103,6 +121,12 @@ test("buildTabTreeModel filters popup windows and marks current-window tabs", ()
       id: 3,
       type: "popup",
       tabs: [{ id: 30, index: 0, title: "Popup", url: "https://popup.com" }]
+    },
+    {
+      id: 4,
+      type: "normal",
+      alwaysOnTop: true,
+      tabs: [{ id: 40, index: 0, title: "Meet PiP", url: "https://meet.google.com/abc-defg-hij" }]
     }
   ], 2);
 
