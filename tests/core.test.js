@@ -134,8 +134,10 @@ test("buildTabTreeModel filters popup windows and marks current-window tabs", ()
   assert.equal(tree[0].id, 2);
   assert.equal(tree[0].label, "Current window");
   assert.equal(tree[0].tabs[0].id, 20);
+  assert.equal(tree[0].tabs[0].active, true);
   assert.equal(tree[0].tabs[0].isCurrentWindow, true);
   assert.equal(tree[0].tabs[0].windowLabel, "Current window");
+  assert.equal(tree[0].tabs[1].active, false);
   assert.equal(tree[1].tabs[0].isCurrentWindow, false);
   assert.equal(tree[1].tabs[0].windowLabel, "Window 2");
 });

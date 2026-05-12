@@ -275,6 +275,7 @@ function renderTabRow(tab) {
     row.className = [
         "tab-row",
         tab.pinned ? "pinned-row" : "",
+        tab.id === state.activeTabId ? "active-row" : "",
         tab.id === state.selectedTabId ? "selected" : "",
         tab.isCurrentWindow ? "" : "other-window"
     ].filter(Boolean).join(" ");
@@ -282,6 +283,8 @@ function renderTabRow(tab) {
     row.setAttribute("role", "option");
     row.setAttribute("tabindex", "-1");
     row.setAttribute("aria-selected", tab.id === state.selectedTabId ? "true" : "false");
+    if (tab.id === state.activeTabId)
+        row.setAttribute("aria-current", "page");
 
     const copy = document.createElement("span");
     copy.className = "tab-copy";
