@@ -27,29 +27,7 @@ Upload the screenshots in this order:
 2. `screenshot-02-every-window.jpg` — show the same pinned apps appearing in another window.
 3. `screenshot-03-tab-actions.jpg` — show cross-window jump, move, and close actions.
 
-The screenshots use the privacy-safe local demo workspace and show the real extension UI.
-
-## Local screenshot pages
-
-Run the privacy-safe demo workspace:
-
-```sh
-pnpm demo:store
-```
-
-It serves four different local origins so PinAllWindows treats them as separate apps:
-
-- `http://127.0.0.1:4311/` — Morning Mail
-- `http://127.0.0.1:4312/` — Launch Board
-- `http://127.0.0.1:4313/` — Week Ahead
-- `http://127.0.0.1:4314/` — Product Notes
-
-Recommended setup:
-
-1. Pin Morning Mail, Launch Board, and Week Ahead.
-2. Leave Product Notes as a regular tab for move/close demonstrations.
-3. Open a second normal Chrome window and let the three pinned apps synchronize.
-4. Keep the demo server running until every screenshot is finished.
+The screenshots show the real extension UI with privacy-safe sample content.
 
 ## Screenshot rules
 
