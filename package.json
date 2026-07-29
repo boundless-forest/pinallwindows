@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "demo:store": "node store-listing/demo-pages/server.mjs",
+    "package": "node scripts/package.mjs",
     "test": "node --test"
   }
 }

@@ -103,41 +103,15 @@ Tab tree:
 
 ## Chrome Web Store
 
-This folder can be uploaded to the Chrome Web Store as a zip.
+Create a tested, minimal upload archive:
 
-Packaging steps
+```sh
+pnpm package
+```
 
-Option A: zip the repo folder (recommended for low friction)
+The command creates `PinAllWindows-<version>.zip` and prints its SHA-256 checksum. It also leaves the exact packaged contents in `dist-store/` so they can be loaded in developer mode for final verification.
 
-This method avoids manual copying. It creates a zip from the repo root and excludes dev-only files.
-
-1. Bump version
-- Update `manifest.json` version.
-
-2. Create the zip
-From the repo root:
-
-- `cd /Users/bear-wang/coding/pinallwindows`
-- `rm -f pinallwindows.zip`
-- `zip -r pinallwindows.zip . \
-  -x ".git/*" \
-  -x "node_modules/*" \
-  -x "dist-store/*" \
-  -x "pinallwindows.zip"`
-
-3. Upload
-- Open the Chrome Web Store Developer Dashboard:
-  - https://chrome.google.com/webstore/devconsole
-- Upload `pinallwindows.zip`.
-
-Option B: staged dist folder
-
-If you prefer a minimal upload, use the staged folder method described in `CHROME_WEB_STORE.md`.
-
-Other store materials
-- Listing copy and a longer checklist are in `CHROME_WEB_STORE.md`.
-- Privacy policy is in `PRIVACY_POLICY.md`.
-- You still need to prepare screenshots.
+See `CHROME_WEB_STORE.md` for the release checklist and `store-listing/LISTING.md` for ready-to-copy listing text and artwork guidance.
 
 ## Notes / limitations
 

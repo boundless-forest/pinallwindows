@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PinAllWindows",
   "version": "0.7.0",
-  "description": "Sync pinned apps and navigate tabs across all Chrome windows.",
+  "description": "Keep pinned apps consistent across Chrome windows and navigate every tab from one side panel.",
   "permissions": ["tabs", "windows", "storage", "sidePanel"],
   "background": {
     "service_worker": "src/background.js",
