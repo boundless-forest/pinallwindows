@@ -26,12 +26,14 @@
     <div class="button-row">
       <button id="repair-storage">Repair pinned tabs</button>
       <button id="clear-storage">Clear pinned storage</button>
+      <button id="copy-diagnostics">Copy diagnostics</button>
       <span id="status" class="status muted"></span>
     </div>
 
     <div class="row muted">
       Repair rebuilds the saved pinned set from your current pinned tabs, keeps one app per origin, and syncs all normal windows.
       Clear removes the saved pinned set and applies an empty sync state.
+      Diagnostics contains recent sync decisions and IDs, but not tab titles or full URLs.
     </div>
 
     <script type="module" src="src/options.js"></script>

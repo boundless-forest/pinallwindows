@@ -11,14 +11,14 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
 ## Install (developer mode)
 
 1. Install dependencies:
-   - `cd /Users/bear-wang/Working/pinallwindows`
+   - `cd /Users/bear-wang/coding/pinallwindows`
    - `pnpm install`
 2. Open `chrome://extensions`
 3. Enable Developer mode
 4. Click Load unpacked
 5. Select this folder:
 
-   `/Users/bear-wang/Working/pinallwindows`
+   `/Users/bear-wang/coding/pinallwindows`
 
 ## Behavior
 
@@ -30,9 +30,14 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
   - Updated only by pin/unpin events (not by navigation).
 - One pinned tab per app per window:
   - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAllWindows will keep one and remove duplicates.
+- Window eligibility:
+  - New normal windows are observed until their Chrome window state is stable before pinned tabs are written.
+  - Popup, always-on-top, and compact windows that may be picture-in-picture are excluded or left ambiguous.
+  - Ambiguous windows are not modified. This favors delayed sync over copying pinned tabs into transient/PiP windows.
 - Options action:
   - `Repair pinned tabs` rebuilds the saved pinned set from currently pinned tabs, dedupes by origin, and syncs all normal windows.
   - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
+  - `Copy diagnostics` copies the latest in-memory sync decisions. Diagnostics include window/tab IDs, origins, and window geometry, but not tab titles or full URLs.
 - Tab tree:
   - Click the PinAllWindows toolbar icon, or use `Alt+Shift+P`.
   - The tree opens in Chrome side panel and stays there until the user closes the side panel.
@@ -49,10 +54,12 @@ Important: Closing a pinned tab in one window does not remove it globally; it ma
 
 ## Testing
 
-Unit tests (pure helpers only):
+Unit tests:
 
-- `cd /Users/bear-wang/Working/pinallwindows`
+- `cd /Users/bear-wang/coding/pinallwindows`
 - `pnpm test`
+
+The suite covers pure sync planning plus controller-level Chrome event simulations, including picture-in-picture classification, internal mutation feedback, and user actions that race with synchronization.
 
 Manual integration test:
 
@@ -60,6 +67,12 @@ Baseline sync:
 - Load the extension via `chrome://extensions` → Load unpacked.
 - Open two Chrome windows.
 - Pin/unpin a few http(s) tabs and verify they propagate.
+
+Picture-in-picture safety:
+- Join a Google Meet call and trigger automatic picture-in-picture.
+- Verify the PiP window does not receive copies of pinned tabs.
+- Open a regular Chrome window and verify it still receives the canonical pinned set after the short eligibility observation period.
+- If behavior is unexpected, open the options page and use `Copy diagnostics` before reloading the extension.
 
 App-level behavior (origin-based):
 - In window A, open two different pages under the same origin (example: two different Gemini chats).
@@ -104,7 +117,7 @@ This method avoids manual copying. It creates a zip from the repo root and exclu
 2. Create the zip
 From the repo root:
 
-- `cd /Users/bear-wang/Working/pinallwindows`
+- `cd /Users/bear-wang/coding/pinallwindows`
 - `rm -f pinallwindows.zip`
 - `zip -r pinallwindows.zip . \
   -x ".git/*" \
@@ -128,7 +141,7 @@ Other store materials
 
 ## Notes / limitations
 
-- Chrome does not provide an atomic "pin across all windows" primitive; this extension syncs via events, so you may see brief delays.
+- Chrome does not provide an atomic "pin across all windows" primitive or a reliable extension-facing PiP window type. This extension observes new windows conservatively and syncs via events, so you may see brief delays.
 - Identity is origin-based (scheme + host). Different pages under the same origin are treated as the same app.
 - Pinned sync is intentionally limited to normal Chrome windows. Popup/devtools/app windows are ignored when seeding and handling pin/unpin events.
 

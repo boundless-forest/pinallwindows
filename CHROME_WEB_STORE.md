@@ -7,7 +7,7 @@ This repo is a Chrome extension. The Chrome Web Store submission is mostly docum
 Before uploading:
 - Verify extension name and description:
   - Name: PinAllWindows
-  - Version: 0.6.2
+  - Version: 0.7.0
 - Verify `manifest.json` has correct version.
 - Verify icons exist and are referenced by the manifest.
 - Verify the extension works in a clean Chrome profile.
@@ -54,10 +54,11 @@ Permissions justification
 - storage: persist the canonical pinned-app set
 - sidePanel: open the tab tree in Chrome's side panel from the extension action/shortcut
 
-Release notes for 0.6.2
-- Added a Repair pinned tabs option that rebuilds pinned storage and removes same-origin duplicates.
-- Refreshed options-page actions for manual recovery.
-- Includes the newer side-panel tab tree for navigating, moving, and closing regular tabs across windows.
+Release notes for 0.7.0
+- Added conservative window eligibility checks that avoid syncing into picture-in-picture and other ambiguous compact windows.
+- Replaced global event suppression with exact mutation tracking and serialized user-intent handling.
+- Added canonical revisions and execution-time revalidation to prevent stale sync plans from creating or removing the wrong tabs.
+- Added privacy-conscious sync diagnostics and controller-level race-condition tests.
 
 ## Packaging instructions
 
@@ -74,7 +75,7 @@ This avoids manual copying and reduces future maintenance.
 2) Create the zip
 From the repo root:
 
-- `cd /Users/bear-wang/Working/pinallwindows`
+- `cd /Users/bear-wang/coding/pinallwindows`
 - `pnpm install`
 - `rm -f pinallwindows.zip`
 - `zip -r pinallwindows.zip . \

@@ -1,5 +1,10 @@
-import { STORAGE_INITIALIZED_KEY, STORAGE_LEGACY_CANONICAL_KEY, STORAGE_ORIGINS_KEY } from "./constants.js";
-import { queryPinnedTabsInNormalWindows, storageGet, storageRemove, storageSet } from "./chrome-api.js";
+import {
+    STORAGE_INITIALIZED_KEY,
+    STORAGE_LEGACY_CANONICAL_KEY,
+    STORAGE_ORIGINS_KEY,
+    STORAGE_REVISION_KEY
+} from "./constants.js";
+import { storageGet, storageRemove, storageSet } from "./chrome-api.js";
 import { seedUrlForCanonicalKey, tabToCanonicalEntry } from "../shared/tab-utils.js";
 // Canonical store persists only a list of origins in chrome.storage.local.
 // Runtime sync logic still consumes a Map<originKey, seedUrl>, which we derive
@@ -61,53 +66,68 @@ export class CanonicalStore {
         return snapshot.canonicalMap;
     }
     async save(map) {
-        await this.persist(map, true);
+        const snapshot = await this.loadSnapshot();
+        return this.persist(map, true, snapshot.revision + 1);
     }
     async clear() {
         // Keep initialized=true so we do not auto-seed again after explicit clear.
-        await this.persist(new Map(), true);
+        const snapshot = await this.loadSnapshot();
+        return this.persist(new Map(), true, snapshot.revision + 1);
     }
-    async rebuildFromPinnedTabs() {
-        const rebuilt = await this.seedFromPinnedTabs();
-        await this.persist(rebuilt, true);
+    async rebuildFromPinnedTabs(tabs) {
+        const snapshot = await this.loadSnapshot();
+        const rebuilt = await this.seedFromPinnedTabs(tabs);
+        await this.persist(rebuilt, true, snapshot.revision + 1);
         return rebuilt;
     }
-    async ensureInitialized() {
+    async ensureInitializedSnapshot(tabs) {
         const snapshot = await this.loadSnapshot();
         if (snapshot.initialized)
-            return snapshot.canonicalMap;
-        const seeded = await this.seedFromPinnedTabs();
-        await this.persist(seeded, true);
-        return seeded;
+            return snapshot;
+        const seeded = await this.seedFromPinnedTabs(tabs);
+        return this.persist(seeded, true, snapshot.revision + 1);
     }
     async loadSnapshot() {
         const raw = await storageGet([
             STORAGE_ORIGINS_KEY,
             STORAGE_INITIALIZED_KEY,
+            STORAGE_REVISION_KEY,
             STORAGE_LEGACY_CANONICAL_KEY
         ]);
         const origins = originListFromRaw(raw[STORAGE_ORIGINS_KEY]);
         const canonicalMap = canonicalMapFromOriginList(origins);
         const initializedFlag = raw[STORAGE_INITIALIZED_KEY] === true;
         const initialized = initializedFlag || raw[STORAGE_ORIGINS_KEY] !== undefined;
+        const revision = Number.isInteger(raw[STORAGE_REVISION_KEY])
+            ? raw[STORAGE_REVISION_KEY]
+            : 0;
         // Explicitly remove old map-based storage shape.
         if (raw[STORAGE_LEGACY_CANONICAL_KEY] !== undefined) {
             await storageRemove([STORAGE_LEGACY_CANONICAL_KEY]);
         }
         return {
             canonicalMap,
-            initialized
+            initialized,
+            revision
         };
     }
-    async persist(map, initialized) {
+    async persist(map, initialized, revision) {
         await storageSet({
             [STORAGE_ORIGINS_KEY]: originListFromCanonicalMap(map),
-            [STORAGE_INITIALIZED_KEY]: initialized
+            [STORAGE_INITIALIZED_KEY]: initialized,
+            [STORAGE_REVISION_KEY]: revision
         });
+        return {
+            canonicalMap: new Map(map),
+            initialized,
+            revision
+        };
     }
-    async seedFromPinnedTabs() {
-        // First-run behavior: use pinned tabs from normal browser windows as baseline.
-        const tabs = await queryPinnedTabsInNormalWindows();
+    async seedFromPinnedTabs(providedTabs) {
+        if (!Array.isArray(providedTabs)) {
+            throw new Error("Eligible-window tabs are required to initialize pinned state");
+        }
+        const tabs = providedTabs;
         const canonical = new Map();
         for (const tab of tabs) {
             const entry = tabToCanonicalEntry(tab);
