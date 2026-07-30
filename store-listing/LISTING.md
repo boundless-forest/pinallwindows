@@ -44,14 +44,14 @@ GOOD TO KNOW
 
 Pinned apps are identified by site origin, so different pages on the same site count as one app. To remove an app everywhere, unpin it; simply closing one pinned copy does not change the shared pinned set.
 
-## Release notes — 0.7.0
+## Release notes — 0.7.1
 
-PinAllWindows 0.7.0 makes pinned-tab synchronization safer and more predictable:
+PinAllWindows 0.7.1 refreshes the extension's visual identity without changing its permissions or core behavior:
 
-• Prevents pinned tabs from being copied into Google Meet picture-in-picture and other ambiguous compact windows  
-• Protects real pin and unpin actions that happen while synchronization is running  
-• Revalidates changes before applying them to avoid stale or duplicate results  
-• Adds privacy-conscious diagnostics and broader race-condition test coverage  
+• Introduces a clearer icon showing matching colored pinned tabs across two browser windows
+• Improves Chrome Web Store promotional artwork with sharper typography and a simpler message
+• Adds a reproducible asset-generation command for consistent extension icons and store images
+• Retains the safer pinned-tab synchronization introduced in version 0.7.0
 
 ## Permission justifications
 

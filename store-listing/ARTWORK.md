@@ -2,20 +2,26 @@
 
 ## Creative concept
 
-**One pinned workspace, in every window.**
+**Pin once. Every window.**
 
-The visual system uses three connected browser windows with the same row of pinned-app tiles. Repetition makes the product behavior understandable before the viewer reads the copy. Deep indigo conveys focus and reliability; electric blue carries the synchronization path; coral pin markers add a distinct focal point.
+The visual system uses three connected browser windows with the same row of pinned-app tiles. Repetition makes the product behavior understandable before the viewer reads the copy. Deep indigo conveys focus and reliability; electric blue carries the synchronization path; coral adds a distinct focal point.
+
+The redesigned icon combines two overlapping browser windows with the same coral, violet, and teal pinned tabs in each window. Repeated colors communicate that the pinned workspace stays consistent across windows without relying on a separate pin symbol. The 16 px source simplifies the window outlines and enlarges the colored tabs for Chrome's toolbar.
+
+Promotional copy uses the bundled Manrope family. The headline is deliberately limited to two lines, with more relaxed tracking and a blue second line to keep the promise readable at both Web Store sizes.
 
 ## Upload assets
 
 | Asset | Size | Purpose |
 | --- | ---: | --- |
-| Store icon | 128×128 | Reuse `icons/icon128.png` for 0.7.0 |
+| Store icon | 128×128 | Upload-ready in `icons/` |
 | Small promo tile | 440×280 | Upload-ready in `assets/final/` |
 | Marquee promo tile | 1400×560 | Upload-ready in `assets/final/`; optional placement |
 | Screenshots | 1280×800 | Three upload-ready JPEG files in `assets/final/screenshots/` |
 
-The generated promo artwork is textless at source. Product name and headline are added in HTML/CSS so every character remains crisp and editable.
+The generated promo artwork is textless at source. Product name and headline are composed from editable SVG and HTML/CSS sources so every character remains crisp and reproducible.
+
+Run `pnpm assets:store` to rebuild the four extension icons and both promotional tiles. The renderer embeds the checked-in fonts and removes the alpha channel from Web Store promotional PNG files.
 
 The promo images communicate the product concept, but they do not replace product screenshots. Chrome's screenshot slots should show the real extension and real browser behavior.
 
@@ -43,3 +49,5 @@ The screenshots show the real extension UI with privacy-safe sample content.
 The textless connected-window artwork was generated with OpenAI ImageGen for this repository. Prompt:
 
 > Create a premium textless key visual for a Chrome Web Store productivity extension named PinAllWindows. Wide advertising composition, designed to be cropped to both 1400x560 and 440x280. Show three simplified, elegant browser-window cards arranged in depth, each clearly sharing the same small row of colorful pinned-tab dots or compact app tiles along the upper-left edge. A subtle glowing path or pin-shaped visual rhythm connects the repeated pinned items across the windows, communicating “one pinned workspace across every window.” Deep navy-to-indigo full-bleed background, electric blue and violet highlights, one restrained coral accent, soft glass panels, crisp modern editorial 3D/flat hybrid, premium and trustworthy, high contrast, uncluttered. Keep the important connected-window motif centered and safe within the middle 60% of the canvas. No people. No readable text. No letters. No logos. No Google or Chrome branding. No real company icons. No watermark. No fake detailed UI, just abstract browser frames and pinned-item symbols. Avoid excessive glow, gradients that reduce contrast, tiny details, and visual clutter.
+
+Manrope is distributed under the SIL Open Font License 1.1. The font license is preserved alongside the checked-in font files.
