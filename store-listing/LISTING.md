@@ -45,15 +45,13 @@ GOOD TO KNOW
 
 Pinned apps are identified by site origin, so different pages on the same site count as one app. To remove an app everywhere, unpin it; simply closing one pinned copy does not change the shared pinned set.
 
-## Release notes — 0.8.0
+## Release notes — 0.8.1
 
-PinAllWindows 0.8.0 makes the side panel faster to navigate and easier to read without changing its permissions:
+PinAllWindows 0.8.1 refines the side panel's initial keyboard selection without changing its behavior or permissions:
 
-• Adds Up/Down Arrow selection and Enter-to-open keyboard navigation
-• Changes the default panel shortcut to Ctrl+Shift+9, or Command+Shift+9 on Mac, and shows the assigned shortcut in the panel
-• Moves tab and window counts to the footer so keyboard guidance stays visible at the top
-• Introduces a clearer natural color system for active tabs, selection, window groups, and tab actions
-• Keeps Move and Close visible on every regular tab while reducing repetitive status labels
+• Removes the blue selection outline when the active tab is also the initial keyboard selection
+• Keeps the amber active-tab treatment visible when the panel first opens
+• Preserves Up/Down Arrow selection and Enter-to-open keyboard navigation
 
 ## Permission justifications
 

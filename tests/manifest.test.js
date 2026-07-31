@@ -23,3 +23,14 @@ test("side panel prioritizes shortcut help above tabs and moves counts below the
   assert.ok(tabListIndex < summaryFooterIndex);
   assert.equal(panel.includes("<h1>Tabs</h1>"), false);
 });
+
+test("initial keyboard selection does not outline the active tab", async () => {
+  const stylesUrl = new URL("../src/tab-tree.css", import.meta.url);
+  const styles = await readFile(stylesUrl, "utf8");
+  const activeSelectionRule = styles.match(
+    /\.tab-row\.active-row\.selected\s*\{([^}]*)\}/,
+  );
+
+  assert.ok(activeSelectionRule);
+  assert.match(activeSelectionRule[1], /box-shadow:\s*none;/);
+});

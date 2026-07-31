@@ -198,7 +198,7 @@ button {
 .tab-row.active-row.selected {
   border-left-color: #d18b20;
   background: #fff8e9;
-  box-shadow: inset 0 0 0 2px #3c79a6;
+  box-shadow: none;
 }
 
 .tab-icon,
