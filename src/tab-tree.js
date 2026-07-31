@@ -1,6 +1,8 @@
 import {
     buildTabTreeModel,
     flattenVisibleTabTreeTabs,
+    formatShortcut,
+    getAdjacentTabId,
     getMoveTargets,
     getPinnedTabs,
     getUnpinnedTabTree
@@ -28,7 +30,9 @@ const elements = {
     refresh: document.getElementById("refresh"),
     modeBar: document.getElementById("mode-bar"),
     status: document.getElementById("status"),
-    tabList: document.getElementById("tab-list")
+    tabList: document.getElementById("tab-list"),
+    openShortcutKeys: document.getElementById("open-shortcut-keys"),
+    openShortcutLabel: document.getElementById("open-shortcut-label")
 };
 
 function runtimeError() {
@@ -65,6 +69,19 @@ function getAllNormalWindowsWithTabs() {
                 return;
             }
             resolve(windows);
+        });
+    });
+}
+
+function getCommands() {
+    return new Promise((resolve, reject) => {
+        chrome.commands.getAll((commands) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(commands);
         });
     });
 }
@@ -145,19 +162,44 @@ function setStatus(text) {
     elements.status.textContent = text;
 }
 
+async function renderOpenShortcut() {
+    const commands = await getCommands();
+    const shortcut = commands.find((command) => command.name === "_execute_action")?.shortcut || "";
+    elements.openShortcutKeys.replaceChildren();
+
+    if (!shortcut) {
+        elements.openShortcutLabel.textContent = "Panel shortcut not assigned";
+        return;
+    }
+
+    const key = document.createElement("kbd");
+    key.textContent = formatShortcut(shortcut);
+    elements.openShortcutKeys.append(key);
+    elements.openShortcutLabel.textContent = "Open panel";
+}
+
 function focusTabList() {
     elements.tabList.focus({ preventScroll: true });
 }
 
 function updateSelectedTabDom(options = {}) {
     const rows = elements.tabList.querySelectorAll(".tab-row");
+    let activeDescendantId = "";
     for (const row of rows) {
         const selected = Number(row.dataset.tabId) === state.selectedTabId;
         row.classList.toggle("selected", selected);
         row.setAttribute("aria-selected", selected ? "true" : "false");
+        if (selected)
+            activeDescendantId = row.id;
         if (selected && options.scroll) {
             row.scrollIntoView({ block: "nearest" });
         }
+    }
+    if (activeDescendantId) {
+        elements.tabList.setAttribute("aria-activedescendant", activeDescendantId);
+    }
+    else {
+        elements.tabList.removeAttribute("aria-activedescendant");
     }
 }
 
@@ -204,9 +246,10 @@ function hostFromUrl(url) {
 
 function tabMetaText(tab) {
     const host = hostFromUrl(tab.url);
-    if (tab.pinned)
-        return `${tab.windowLabel || "Window"} - ${host}`;
-    return host;
+    const parts = tab.pinned ? [tab.windowLabel || "Window", host] : [host];
+    if (tab.audible)
+        parts.push(tab.muted ? "Muted" : "Audio");
+    return parts.join(" · ");
 }
 
 function placeholderForTab(tab) {
@@ -236,26 +279,10 @@ function badge(text, className = "") {
     return node;
 }
 
-function renderTabBadges(tab) {
-    const node = document.createElement("span");
-    node.className = "badges";
-    if (tab.isCurrentWindow) {
-        node.append(badge("CURRENT", "current"));
-    }
-    else {
-        node.append(badge("OTHER", "other"));
-    }
-    if (tab.pinned)
-        node.append(badge("PINNED", "pinned"));
-    if (tab.audible)
-        node.append(badge(tab.muted ? "MUTED" : "AUDIO", "audio"));
-    return node;
-}
-
-function actionButton(text, label, onClick) {
+function actionButton(text, label, className, onClick) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "tab-action";
+    button.className = `tab-action ${className}`;
     button.textContent = text;
     button.setAttribute("aria-label", label);
     button.addEventListener("click", (event) => {
@@ -276,9 +303,9 @@ function renderTabRow(tab) {
         "tab-row",
         tab.pinned ? "pinned-row" : "",
         tab.id === state.activeTabId ? "active-row" : "",
-        tab.id === state.selectedTabId ? "selected" : "",
-        tab.isCurrentWindow ? "" : "other-window"
+        tab.id === state.selectedTabId ? "selected" : ""
     ].filter(Boolean).join(" ");
+    row.id = `tab-${tab.id}`;
     row.dataset.tabId = String(tab.id);
     row.setAttribute("role", "option");
     row.setAttribute("tabindex", "-1");
@@ -302,19 +329,19 @@ function renderTabRow(tab) {
         const actions = document.createElement("span");
         actions.className = "tab-actions";
         actions.append(
-            actionButton("Move", `Move ${tab.title}`, () => {
+            actionButton("Move", `Move ${tab.title}`, "move-action", () => {
                 setSelectedTabId(tab.id);
                 startMove(tab.id);
             }),
-            actionButton("Close", `Close ${tab.title}`, () => {
+            actionButton("Close", `Close ${tab.title}`, "close-action", () => {
                 setSelectedTabId(tab.id);
                 closeTab(tab.id).catch(showActionError);
             })
         );
-        row.append(iconForTab(tab), copy, renderTabBadges(tab), actions);
+        row.append(iconForTab(tab), copy, actions);
     }
     else {
-        row.append(iconForTab(tab), copy, renderTabBadges(tab));
+        row.append(iconForTab(tab), copy);
     }
 
     row.addEventListener("mouseenter", () => {
@@ -331,9 +358,9 @@ function renderTabRow(tab) {
     return row;
 }
 
-function renderWindowHeading(labelText, countValue, countLabel) {
+function renderWindowHeading(labelText, countValue, countLabel, variant) {
     const heading = document.createElement("div");
-    heading.className = "window-heading";
+    heading.className = `window-heading ${variant}`;
 
     const label = document.createElement("span");
     label.textContent = labelText;
@@ -388,14 +415,15 @@ function renderBrowseList() {
 
     const pinnedTabs = getPinnedTabs(state.tree);
     if (pinnedTabs.length > 0) {
-        fragment.append(renderWindowHeading("Pinned tabs", pinnedTabs.length, "tab"));
+        fragment.append(renderWindowHeading("Pinned tabs", pinnedTabs.length, "tab", "pinned-heading"));
         for (const tab of pinnedTabs) {
             fragment.append(renderTabRow(tab));
         }
     }
 
     for (const win of getUnpinnedTabTree(state.tree)) {
-        fragment.append(renderWindowHeading(win.label, win.tabs.length, "tab"));
+        const variant = win.isCurrentWindow ? "current-heading" : "other-heading";
+        fragment.append(renderWindowHeading(win.label, win.tabs.length, "tab", variant));
 
         for (const tab of win.tabs) {
             fragment.append(renderTabRow(tab));
@@ -437,7 +465,7 @@ function renderMoveList() {
 function render() {
     const windowCount = state.tree.length;
     const tabCount = state.tabs.length;
-    elements.summary.textContent = `${tabCount} ${tabCount === 1 ? "tab" : "tabs"} across ${windowCount} ${windowCount === 1 ? "window" : "windows"}`;
+    elements.summary.textContent = `${tabCount} ${tabCount === 1 ? "tab" : "tabs"} · ${windowCount} ${windowCount === 1 ? "window" : "windows"}`;
 
     const tab = movingTab();
     if (state.mode === MODE_MOVE && tab) {
@@ -556,6 +584,25 @@ async function activateTab(tabId) {
     await updateWindow(tab.windowId, { focused: true });
 }
 
+function handleTabListKeydown(event) {
+    if (state.mode !== MODE_BROWSE || event.target !== elements.tabList)
+        return;
+
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        event.preventDefault();
+        const offset = event.key === "ArrowUp" ? -1 : 1;
+        const nextTabId = getAdjacentTabId(state.tabs, state.selectedTabId, offset);
+        if (nextTabId !== null)
+            setSelectedTabId(nextTabId, { scroll: true });
+        return;
+    }
+
+    if (event.key === "Enter" && state.selectedTabId !== null) {
+        event.preventDefault();
+        activateTab(state.selectedTabId).catch(showActionError);
+    }
+}
+
 async function closeTab(tabId) {
     const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab)
@@ -615,13 +662,22 @@ async function init() {
     elements.modeBar = assertElement(elements.modeBar, "mode bar");
     elements.status = assertElement(elements.status, "status");
     elements.tabList = assertElement(elements.tabList, "tab list");
+    elements.openShortcutKeys = assertElement(elements.openShortcutKeys, "open shortcut keys");
+    elements.openShortcutLabel = assertElement(elements.openShortcutLabel, "open shortcut label");
 
     elements.refresh.addEventListener("click", () => {
         refreshTree({ keepSelection: true }).catch(showActionError);
     });
+    elements.tabList.addEventListener("keydown", handleTabListKeydown);
     registerAutoRefreshHandlers();
 
-    await refreshTree({ preferActive: true });
+    await Promise.all([
+        refreshTree({ preferActive: true }),
+        renderOpenShortcut().catch(() => {
+            elements.openShortcutLabel.textContent = "Panel shortcut unavailable";
+        })
+    ]);
+    focusTabList();
 }
 
 init().catch(showActionError);

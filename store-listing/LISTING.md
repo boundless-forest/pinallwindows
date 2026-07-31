@@ -31,8 +31,9 @@ ONE PINNED WORKSPACE
 
 ALL YOUR TABS, ONE SIDE PANEL
 
-• Open the tab tree from the toolbar or with Alt+Shift+P  
-• Jump to a tab in any window with a double-click  
+• Open the tab tree from the toolbar or with Ctrl+Shift+9 (Command+Shift+9 on Mac)
+• Select tabs with the Arrow keys and open them with Enter
+• Jump to a tab in any window with a double-click
 • Move or close regular tabs without hunting through windows  
 • See updates automatically as tabs and windows change  
 
@@ -44,14 +45,15 @@ GOOD TO KNOW
 
 Pinned apps are identified by site origin, so different pages on the same site count as one app. To remove an app everywhere, unpin it; simply closing one pinned copy does not change the shared pinned set.
 
-## Release notes — 0.7.1
+## Release notes — 0.8.0
 
-PinAllWindows 0.7.1 refreshes the extension's visual identity without changing its permissions or core behavior:
+PinAllWindows 0.8.0 makes the side panel faster to navigate and easier to read without changing its permissions:
 
-• Introduces a clearer icon showing matching colored pinned tabs across two browser windows
-• Improves Chrome Web Store promotional artwork with sharper typography and a simpler message
-• Adds a reproducible asset-generation command for consistent extension icons and store images
-• Retains the safer pinned-tab synchronization introduced in version 0.7.0
+• Adds Up/Down Arrow selection and Enter-to-open keyboard navigation
+• Changes the default panel shortcut to Ctrl+Shift+9, or Command+Shift+9 on Mac, and shows the assigned shortcut in the panel
+• Moves tab and window counts to the footer so keyboard guidance stays visible at the top
+• Introduces a clearer natural color system for active tabs, selection, window groups, and tab actions
+• Keeps Move and Close visible on every regular tab while reducing repetitive status labels
 
 ## Permission justifications
 

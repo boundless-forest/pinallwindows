@@ -14,6 +14,8 @@ import {
   buildTabTreeModel,
   flattenTabTreeTabs,
   flattenVisibleTabTreeTabs,
+  formatShortcut,
+  getAdjacentTabId,
   getMoveTargets,
   getPinnedTabs,
   getUnpinnedTabTree
@@ -221,4 +223,22 @@ test("tab tree treats non-http pinned tabs as distinct exact URLs", () => {
   ], 10);
 
   assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.id), [1, 2]);
+});
+
+test("getAdjacentTabId moves selection and stops at list boundaries", () => {
+  const tabs = [{ id: 10 }, { id: 20 }, { id: 30 }];
+
+  assert.equal(getAdjacentTabId(tabs, 20, -1), 10);
+  assert.equal(getAdjacentTabId(tabs, 20, 1), 30);
+  assert.equal(getAdjacentTabId(tabs, 10, -1), 10);
+  assert.equal(getAdjacentTabId(tabs, 30, 1), 30);
+  assert.equal(getAdjacentTabId(tabs, null, 1), 10);
+  assert.equal(getAdjacentTabId([], null, 1), null);
+});
+
+test("formatShortcut uses compact macOS symbols without obscuring other platforms", () => {
+  assert.equal(formatShortcut("Command+Shift+9"), "⌘⇧9");
+  assert.equal(formatShortcut("Shift+Command+9"), "⇧⌘9");
+  assert.equal(formatShortcut("MacCtrl+Alt+P"), "⌃⌥P");
+  assert.equal(formatShortcut("Ctrl+Shift+9"), "Ctrl+Shift+9");
 });

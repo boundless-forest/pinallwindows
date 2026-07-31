@@ -78,6 +78,30 @@ export function flattenVisibleTabTreeTabs(tree) {
     ];
 }
 
+export function getAdjacentTabId(tabs, selectedTabId, offset) {
+    if (tabs.length === 0)
+        return null;
+    const selectedIndex = tabs.findIndex((tab) => tab.id === selectedTabId);
+    if (selectedIndex === -1)
+        return tabs[0].id;
+    const nextIndex = Math.max(0, Math.min(selectedIndex + offset, tabs.length - 1));
+    return tabs[nextIndex].id;
+}
+
+export function formatShortcut(shortcut) {
+    const parts = shortcut.split("+");
+    const isMacShortcut = parts.includes("Command") || parts.includes("MacCtrl");
+    if (!isMacShortcut)
+        return shortcut;
+    const macSymbols = {
+        Command: "⌘",
+        MacCtrl: "⌃",
+        Alt: "⌥",
+        Shift: "⇧"
+    };
+    return parts.map((part) => macSymbols[part] || part).join("");
+}
+
 export function getMoveTargets(tree, sourceWindowId) {
     return (Array.isArray(tree) ? tree : [])
         .filter((win) => typeof win.id === "number" && win.id !== sourceWindowId)

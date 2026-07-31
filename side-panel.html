@@ -9,19 +9,25 @@
   <body class="side-panel">
     <main class="app">
       <header class="topbar">
-        <div class="title-wrap">
-          <h1>Tabs</h1>
-          <p id="summary" class="summary">Loading tabs...</p>
+        <div class="shortcut-help" aria-label="Keyboard shortcuts">
+          <span id="open-shortcut" class="help-item" title="Change this shortcut in Chrome's extension shortcut settings">
+            <span id="open-shortcut-keys" class="shortcut-keys"></span>
+            <span id="open-shortcut-label">Open panel</span>
+          </span>
+          <span class="help-separator" aria-hidden="true">·</span>
+          <span class="help-item"><kbd>↑</kbd><kbd>↓</kbd> Select</span>
+          <span class="help-separator" aria-hidden="true">·</span>
+          <span class="help-item"><kbd>Enter</kbd> Open</span>
         </div>
         <button id="refresh" class="refresh-button" type="button">Refresh</button>
       </header>
 
       <div id="mode-bar" class="mode-bar" hidden></div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
-      <div id="tab-list" class="tab-list" role="listbox" aria-label="All tabs"></div>
+      <div id="tab-list" class="tab-list" role="listbox" aria-label="All tabs" tabindex="0"></div>
 
-      <footer class="help">
-        Double-click a tab to open it. Regular tabs can move or close.
+      <footer class="summary-footer">
+        <p id="summary" class="summary">Loading tabs...</p>
       </footer>
     </main>
 

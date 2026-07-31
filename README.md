@@ -39,8 +39,11 @@ In other words: PinAllWindows syncs pinned items by origin (scheme + host), not 
   - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
   - `Copy diagnostics` copies the latest in-memory sync decisions. Diagnostics include window/tab IDs, origins, and window geometry, but not tab titles or full URLs.
 - Tab tree:
-  - Click the PinAllWindows toolbar icon, or use `Alt+Shift+P`.
+  - Click the PinAllWindows toolbar icon, or use `Ctrl+Shift+9` (`Command+Shift+9` on macOS).
   - The tree opens in Chrome side panel and stays there until the user closes the side panel.
+  - The header shows the currently assigned action shortcut, including user customizations.
+  - Tab and window counts appear in the footer.
+  - Use the Up/Down Arrow keys to select a tab, then press Enter to open it.
   - Double-click switches to a tab in its window.
   - Pinned rows are listed once per window so users can jump to a pinned tab in a specific window.
   - Pinned rows do not show `Move` or `Close`; regular tabs can use both row actions.
@@ -91,9 +94,14 @@ Switching the pinned target for an app:
 
 Tab tree:
 - Click the extension icon and verify the Chrome side panel opens with tabs from all normal windows.
-- Use `Alt+Shift+P` and verify the Chrome side panel opens.
-- Verify tabs from other windows show the `OTHER` marker.
+- Use `Ctrl+Shift+9` (`Command+Shift+9` on macOS) and verify the Chrome side panel opens.
+- Verify the header shows the action shortcut currently assigned by Chrome.
+- Verify the footer shows the current tab and window counts.
+- Use the Up/Down Arrow keys to change the selected row, then press Enter and verify the selected tab opens.
+- Verify tabs are grouped under `Current window` and the numbered window headings without repeated location badges.
+- Verify the active tab uses the amber row state while keyboard selection uses the blue highlighted row state.
 - Verify pinned tabs appear per window and do not show `Move` or `Close`.
+- Verify every regular tab keeps `Move` and `Close` visible without hovering.
 - Double-click a tab under `Current window` and verify it activates that tab.
 - Double-click a tab under another window and verify Chrome focuses that window and activates the tab.
 - Reopen the tab tree, click `Close`, and verify the tab closes.

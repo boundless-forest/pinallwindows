@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PinAllWindows",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Keep pinned apps consistent across Chrome windows and navigate every tab from one side panel.",
   "permissions": ["tabs", "windows", "storage", "sidePanel"],
   "background": {
@@ -18,8 +18,8 @@
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "default": "Alt+Shift+P",
-        "mac": "Alt+Shift+P"
+        "default": "Ctrl+Shift+9",
+        "mac": "Command+Shift+9"
       },
       "description": "Open the tab tree"
     }
