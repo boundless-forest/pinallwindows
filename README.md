@@ -1,132 +1,101 @@
 # PinAllWindows
 
-Sync pinned apps across all open Chrome windows (same machine, same profile), using app-level union mode.
+**Sync pinned tabs across Chrome windows and manage every open tab from one side panel.**
 
-- Pin a tab in any window → that app (site/origin) becomes pinned in every window.
-- Unpin a tab in any window → that app is unpinned/removed everywhere.
-- Click the extension icon or use the action shortcut to open a keyboard-friendly tab tree across all normal windows.
+[Install PinAllWindows from the Chrome Web Store](https://chromewebstore.google.com/detail/pinallwindows/fakbifeeblnopdhicpmhhmcdhmefphjp)
 
-In other words: PinAllWindows syncs pinned items by origin (scheme + host), not by exact URL.
+Chrome normally keeps pinned tabs separate in each window. If you work across multiple Chrome windows or monitors, the apps you rely on can disappear from one window or become duplicated across several.
 
-## Install (developer mode)
+PinAllWindows gives every normal Chrome window one consistent pinned workspace. Pin a site once and it appears in every eligible window. Unpin it once and it is removed everywhere.
 
-1. Install dependencies:
-   - `cd /Users/bear-wang/coding/pinallwindows`
-   - `pnpm install`
-2. Open `chrome://extensions`
-3. Enable Developer mode
-4. Click Load unpacked
-5. Select this folder:
+## One pinned workspace in every window
 
-   `/Users/bear-wang/coding/pinallwindows`
+- Keep the same pinned apps across all normal Chrome windows.
+- Pin or unpin from any window and let the others update automatically.
+- Treat different pages from the same site as one pinned app.
+- Remove duplicate pinned tabs automatically.
+- Avoid modifying picture-in-picture and other ambiguous compact windows.
 
-## Behavior
+PinAllWindows is especially useful if you keep separate Chrome windows on multiple monitors but want Gmail, Calendar, Slack, ChatGPT, or other everyday web apps available in each one.
 
-- Union mode (app-level): pin anywhere → the same *app* appears pinned everywhere; unpin anywhere → removed everywhere.
-- Only `http://` and `https://` tabs are synchronized.
-- Canonical pinned apps:
-  - Stored in `chrome.storage.local` as `pinallwindows.origins: string[]` (origin list).
-  - Initialized from existing pinned tabs on first run.
-  - Updated only by pin/unpin events (not by navigation).
-- One pinned tab per app per window:
-  - If you pin multiple tabs from the same app (e.g. two Gemini chats), PinAllWindows will keep one and remove duplicates.
-- Window eligibility:
-  - New normal windows are observed until their Chrome window state is stable before pinned tabs are written.
-  - Popup, always-on-top, and compact windows that may be picture-in-picture are excluded or left ambiguous.
-  - Ambiguous windows are not modified. This favors delayed sync over copying pinned tabs into transient/PiP windows.
-- Options action:
-  - `Repair pinned tabs` rebuilds the saved pinned set from currently pinned tabs, dedupes by origin, and syncs all normal windows.
-  - `Clear pinned storage` clears the saved pinned set and syncs that empty state to all normal windows.
-  - `Copy diagnostics` copies the latest in-memory sync decisions. Diagnostics include window/tab IDs, origins, and window geometry, but not tab titles or full URLs.
-- Tab tree:
-  - Click the PinAllWindows toolbar icon, or use `Ctrl+Shift+9` (`Command+Shift+9` on macOS).
-  - The tree opens in Chrome side panel and stays there until the user closes the side panel.
-  - The header shows the currently assigned action shortcut, including user customizations.
-  - Tab and window counts appear in the footer.
-  - Use the Up/Down Arrow keys to select a tab, then press Enter to open it.
-  - Double-click switches to a tab in its window.
-  - Pinned rows are listed once per window so users can jump to a pinned tab in a specific window.
-  - Pinned rows do not show `Move` or `Close`; regular tabs can use both row actions.
-  - The list auto-updates on tab/window changes; `Refresh` remains as a forced refresh.
+## All your tabs in one side panel
 
-How to switch the pinned target for an app:
-- Unpin the current pinned tab for that app.
-- Then pin the new one you want.
+Click the PinAllWindows toolbar icon to open a tab tree containing tabs from every normal Chrome window.
 
-Important: Closing a pinned tab in one window does not remove it globally; it may reappear during sync. Use unpin to remove globally.
+From the side panel, you can:
 
-## Testing
+- See which tabs belong to each window.
+- Jump directly to a tab in any window.
+- Move regular tabs between windows.
+- Close regular tabs without switching windows first.
+- Navigate with the keyboard using the Up and Down Arrow keys, then press Enter to open the selected tab.
 
-Unit tests:
+You can also open the panel with `Ctrl+Shift+9` on Windows and Linux or `Command+Shift+9` on macOS. Chrome lets you change this shortcut, and PinAllWindows displays the shortcut currently assigned in the side panel.
 
-- `cd /Users/bear-wang/coding/pinallwindows`
-- `pnpm test`
+## How to use PinAllWindows
 
-The suite covers pure sync planning plus controller-level Chrome event simulations, including picture-in-picture classification, internal mutation feedback, and user actions that race with synchronization.
+### Keep an app pinned everywhere
 
-Manual integration test:
+1. Open the site you want in any normal Chrome window.
+2. Right-click its tab and choose **Pin**.
+3. PinAllWindows adds that pinned app to your other normal Chrome windows.
 
-Baseline sync:
-- Load the extension via `chrome://extensions` → Load unpacked.
-- Open two Chrome windows.
-- Pin/unpin a few http(s) tabs and verify they propagate.
+### Remove a pinned app everywhere
 
-Picture-in-picture safety:
-- Join a Google Meet call and trigger automatic picture-in-picture.
-- Verify the PiP window does not receive copies of pinned tabs.
-- Open a regular Chrome window and verify it still receives the canonical pinned set after the short eligibility observation period.
-- If behavior is unexpected, open the options page and use `Copy diagnostics` before reloading the extension.
+Right-click the pinned tab in any window and choose **Unpin**. PinAllWindows removes that app from the shared pinned set and updates the other windows.
 
-App-level behavior (origin-based):
-- In window A, open two different pages under the same origin (example: two different Gemini chats).
-- Pin both of them.
-- Verify each window ends up with exactly one pinned tab for that origin (duplicates removed).
+Closing a pinned tab does not remove it globally, so it may return during synchronization. Use **Unpin** when you want to remove it everywhere.
 
-Repair action:
-- Create or keep two pinned tabs from the same origin in one normal window.
-- Open the extension options page and click `Repair pinned tabs`.
-- Verify every normal window has one pinned tab for that origin and the same pinned-origin set.
+### Switch which page represents an app
 
-Switching the pinned target for an app:
-- Unpin the existing pinned tab for that origin.
-- Pin the new page you want.
-- Verify all windows converge to the new pinned app tab.
+PinAllWindows identifies a pinned app by its site origin, such as `https://mail.google.com`, rather than by its complete page URL.
 
-Tab tree:
-- Click the extension icon and verify the Chrome side panel opens with tabs from all normal windows.
-- Use `Ctrl+Shift+9` (`Command+Shift+9` on macOS) and verify the Chrome side panel opens.
-- Verify the header shows the action shortcut currently assigned by Chrome.
-- Verify the footer shows the current tab and window counts.
-- Use the Up/Down Arrow keys to change the selected row, then press Enter and verify the selected tab opens.
-- Verify tabs are grouped under `Current window` and the numbered window headings without repeated location badges.
-- Verify the active tab uses the amber row state while keyboard selection uses the blue highlighted row state.
-- Verify pinned tabs appear per window and do not show `Move` or `Close`.
-- Verify every regular tab keeps `Move` and `Close` visible without hovering.
-- Double-click a tab under `Current window` and verify it activates that tab.
-- Double-click a tab under another window and verify Chrome focuses that window and activates the tab.
-- Reopen the tab tree, click `Close`, and verify the tab closes.
-- Reopen the tab tree, click `Move`, choose a destination window, and verify the tab moves and focuses.
-- Start a move, click `Back to tabs`, and verify the tree list returns without moving the tab.
-- Open or close a tab while the tree is open and verify the list updates without pressing `Refresh`.
+To switch to another page on the same site:
 
-## Chrome Web Store
+1. Unpin the current tab for that site.
+2. Open the page you prefer.
+3. Pin the new tab.
 
-Create a tested, minimal upload archive:
+### Repair the pinned workspace
 
-```sh
-pnpm package
-```
+If your pinned tabs ever become inconsistent, open the extension options and select **Repair pinned tabs**. PinAllWindows rebuilds the shared set from your currently pinned tabs, removes duplicates, and synchronizes your normal windows again.
 
-The command creates `PinAllWindows-<version>.zip` and prints its SHA-256 checksum. It also leaves the exact packaged contents in `dist-store/` so they can be loaded in developer mode for final verification.
+## Frequently asked questions
 
-See `CHROME_WEB_STORE.md` for the release checklist and `store-listing/LISTING.md` for ready-to-copy listing text and artwork guidance.
+### Does PinAllWindows sync between computers?
 
-## Notes / limitations
+No. PinAllWindows synchronizes pinned apps between Chrome windows on the same computer and in the same Chrome profile. It does not provide cross-device or cloud synchronization.
 
-- Chrome does not provide an atomic "pin across all windows" primitive or a reliable extension-facing PiP window type. This extension observes new windows conservatively and syncs via events, so you may see brief delays.
-- Identity is origin-based (scheme + host). Different pages under the same origin are treated as the same app.
-- Pinned sync is intentionally limited to normal Chrome windows. Popup/devtools/app windows are ignored when seeding and handling pin/unpin events.
+### Does it sync every open tab?
+
+Only pinned apps are synchronized across windows. The side panel lets you view and manage regular tabs, but it does not copy them into every window.
+
+### Why are different pages from one site treated as the same app?
+
+PinAllWindows uses each site's origin so that several Gmail messages, Google Docs, or ChatGPT conversations do not become duplicate pinned apps in every window. Each site keeps one pinned representative per window.
+
+### Does it work with picture-in-picture windows?
+
+PinAllWindows is deliberately conservative around picture-in-picture and other compact windows that Chrome may not identify reliably. Ambiguous windows are left unchanged to avoid copying pinned tabs into temporary floating windows.
+
+### Which pages can be synchronized?
+
+Only regular `http://` and `https://` pages are synchronized. Chrome internal pages and other special URLs are not included.
+
+## Private and local by design
+
+PinAllWindows requires no account and uses no external server.
+
+- Your pinned-site list is stored in Chrome's local extension storage.
+- Your tab titles and full browsing URLs are not uploaded.
+- Your browsing data is not sold or used for advertising.
+
+Read the full [privacy policy](PRIVACY_POLICY.md).
+
+## Support
+
+If something is not working as expected, open a [GitHub issue](https://github.com/boundless-forest/pinallwindows/issues). Include the steps that caused the problem and, when relevant, diagnostics copied from the extension options page. Diagnostics may contain window and tab IDs, site origins, and window geometry, but not tab titles or full URLs.
 
 ## License
 
-MIT
+PinAllWindows is open-source software released under the [MIT License](LICENSE).
