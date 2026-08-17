@@ -4,13 +4,13 @@ This document contains the English copy to paste into the Chrome Web Store Devel
 
 ## Product name
 
-PinAllWindows
+PinAllWindows: Sync Pinned Tabs
 
 ## Summary
 
-Keep pinned apps consistent across Chrome windows and navigate every tab from one side panel.
+Sync the same pinned tabs across every Chrome window and manage all open tabs from one side panel.
 
-Character count: 93 of 132.
+Character count: 98 of 132.
 
 ## Category
 
@@ -45,13 +45,13 @@ GOOD TO KNOW
 
 Pinned apps are identified by site origin, so different pages on the same site count as one app. To remove an app everywhere, unpin it; simply closing one pinned copy does not change the shared pinned set.
 
-## Release notes — 0.8.1
+## Release notes — 0.8.2
 
-PinAllWindows 0.8.1 refines the side panel's initial keyboard selection without changing its behavior or permissions:
+PinAllWindows 0.8.2 makes the extension's purpose clearer in Chrome and the Chrome Web Store without changing its behavior or permissions:
 
-• Removes the blue selection outline when the active tab is also the initial keyboard selection
-• Keeps the amber active-tab treatment visible when the panel first opens
-• Preserves Up/Down Arrow selection and Enter-to-open keyboard navigation
+• Adds “Sync Pinned Tabs” to the packaged product name
+• Describes the cross-window pinned-tab workflow with the terms users commonly search for
+• Keeps all synchronization and side-panel behavior unchanged
 
 ## Permission justifications
 

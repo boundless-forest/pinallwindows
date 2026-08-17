@@ -2,6 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+test("package metadata clearly describes cross-window pinned-tab sync", async () => {
+  const manifestUrl = new URL("../manifest.json", import.meta.url);
+  const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+
+  assert.equal(manifest.name, "PinAllWindows: Sync Pinned Tabs");
+  assert.equal(
+    manifest.description,
+    "Sync the same pinned tabs across every Chrome window and manage all open tabs from one side panel.",
+  );
+  assert.ok(manifest.name.length <= 75);
+  assert.ok(manifest.description.length <= 132);
+});
+
 test("action shortcut uses the low-conflict numeric binding on every platform", async () => {
   const manifestUrl = new URL("../manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
