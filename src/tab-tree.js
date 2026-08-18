@@ -1,5 +1,6 @@
 import {
     buildTabTreeModel,
+    flattenTabTreeTabs,
     flattenVisibleTabTreeTabs,
     formatShortcut,
     getAdjacentTabId,
@@ -7,6 +8,9 @@ import {
     getPinnedTabs,
     getUnpinnedTabTree
 } from "./shared/tab-tree.js";
+import { storageGet } from "./background/chrome-api.js";
+import { STORAGE_SHOW_PINNED_TABS_KEY } from "./background/constants.js";
+import { resolveShowPinnedTabs } from "./shared/preferences.js";
 
 const MODE_BROWSE = "browse";
 const MODE_MOVE = "move";
@@ -20,7 +24,8 @@ const state = {
     selectedTabId: null,
     selectedTargetIndex: 0,
     mode: MODE_BROWSE,
-    movingTabId: null
+    movingTabId: null,
+    showPinnedTabs: true
 };
 
 let refreshTimer = null;
@@ -414,7 +419,7 @@ function renderBrowseList() {
     }
 
     const pinnedTabs = getPinnedTabs(state.tree);
-    if (pinnedTabs.length > 0) {
+    if (state.showPinnedTabs && pinnedTabs.length > 0) {
         fragment.append(renderWindowHeading("Pinned tabs", pinnedTabs.length, "tab", "pinned-heading"));
         for (const tab of pinnedTabs) {
             fragment.append(renderTabRow(tab));
@@ -464,8 +469,12 @@ function renderMoveList() {
 
 function render() {
     const windowCount = state.tree.length;
-    const tabCount = state.tabs.length;
-    elements.summary.textContent = `${tabCount} ${tabCount === 1 ? "tab" : "tabs"} · ${windowCount} ${windowCount === 1 ? "window" : "windows"}`;
+    const tabCount = flattenTabTreeTabs(state.tree).length;
+    const pinnedTabCount = getPinnedTabs(state.tree).length;
+    const hiddenPinnedSummary = !state.showPinnedTabs && pinnedTabCount > 0
+        ? ` · ${pinnedTabCount} pinned hidden`
+        : "";
+    elements.summary.textContent = `${tabCount} ${tabCount === 1 ? "tab" : "tabs"} · ${windowCount} ${windowCount === 1 ? "window" : "windows"}${hiddenPinnedSummary}`;
 
     const tab = movingTab();
     if (state.mode === MODE_MOVE && tab) {
@@ -518,6 +527,15 @@ function registerAutoRefreshHandlers() {
     chrome.windows.onFocusChanged.addListener(scheduleRefresh);
 }
 
+function registerPreferenceChangeHandler() {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== "local" || !changes[STORAGE_SHOW_PINNED_TABS_KEY])
+            return;
+        state.showPinnedTabs = resolveShowPinnedTabs(changes[STORAGE_SHOW_PINNED_TABS_KEY].newValue);
+        refreshTree({ keepSelection: true }).catch(showActionError);
+    });
+}
+
 function showActionError(error) {
     console.error(error);
     setStatus(`Failed: ${error?.message || error || "unknown error"}`);
@@ -559,7 +577,9 @@ async function refreshTree(options = {}) {
     state.currentWindowId = context.currentWindowId;
     state.activeTabId = context.activeTabId;
     state.tree = buildTabTreeModel(windows, context.currentWindowId);
-    state.tabs = flattenVisibleTabTreeTabs(state.tree);
+    state.tabs = flattenVisibleTabTreeTabs(state.tree, {
+        includePinnedTabs: state.showPinnedTabs
+    });
 
     let nextTabId = options.preferActive ? context.activeTabId : previousSelection;
     if (!state.tabs.some((tab) => tab.id === nextTabId)) {
@@ -665,11 +685,15 @@ async function init() {
     elements.openShortcutKeys = assertElement(elements.openShortcutKeys, "open shortcut keys");
     elements.openShortcutLabel = assertElement(elements.openShortcutLabel, "open shortcut label");
 
+    const storedPreferences = await storageGet([STORAGE_SHOW_PINNED_TABS_KEY]);
+    state.showPinnedTabs = resolveShowPinnedTabs(storedPreferences[STORAGE_SHOW_PINNED_TABS_KEY]);
+
     elements.refresh.addEventListener("click", () => {
         refreshTree({ keepSelection: true }).catch(showActionError);
     });
     elements.tabList.addEventListener("keydown", handleTabListKeydown);
     registerAutoRefreshHandlers();
+    registerPreferenceChangeHandler();
 
     await Promise.all([
         refreshTree({ preferActive: true }),

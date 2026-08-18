@@ -28,9 +28,12 @@ From the side panel, you can:
 - Jump directly to a tab in any window.
 - Move regular tabs between windows.
 - Close regular tabs without switching windows first.
+- Hide the pinned-tabs section when you want a more compact tab list.
 - Navigate with the keyboard using the Up and Down Arrow keys, then press Enter to open the selected tab.
 
 You can also open the panel with `Ctrl+Shift+9` on Windows and Linux or `Command+Shift+9` on macOS. Chrome lets you change this shortcut, and PinAllWindows displays the shortcut currently assigned in the side panel.
+
+To hide pinned tabs from the side panel without changing synchronization, open the extension options and turn off **Show pinned tabs**. The preference is stored locally for the current Chrome profile.
 
 ## How to use PinAllWindows
 

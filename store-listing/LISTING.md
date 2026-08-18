@@ -35,6 +35,7 @@ ALL YOUR TABS, ONE SIDE PANEL
 • Select tabs with the Arrow keys and open them with Enter
 • Jump to a tab in any window with a double-click
 • Move or close regular tabs without hunting through windows  
+• Hide the pinned-tabs section for a more compact view
 • See updates automatically as tabs and windows change  
 
 LOCAL BY DESIGN
@@ -45,13 +46,13 @@ GOOD TO KNOW
 
 Pinned apps are identified by site origin, so different pages on the same site count as one app. To remove an app everywhere, unpin it; simply closing one pinned copy does not change the shared pinned set.
 
-## Release notes — 0.8.2
+## Release notes — 0.9.0
 
-PinAllWindows 0.8.2 makes the extension's purpose clearer in Chrome and the Chrome Web Store without changing its behavior or permissions:
+PinAllWindows 0.9.0 makes the options page clearer and gives you more control over the side panel:
 
-• Adds “Sync Pinned Tabs” to the packaged product name
-• Describes the cross-window pinned-tab workflow with the terms users commonly search for
-• Keeps all synchronization and side-panel behavior unchanged
+• Adds a Show pinned tabs setting for hiding the pinned section without changing synchronization
+• Redesigns the options page with clearer sections for display, sync repair, and troubleshooting
+• Adds safer confirmation before clearing pinned storage
 
 ## Permission justifications
 

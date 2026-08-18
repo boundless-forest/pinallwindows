@@ -1,40 +1,96 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PinAllWindows Options</title>
-    <style>
-      body { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; max-width: 620px; }
-      button { border: 1px solid #bbb; border-radius: 6px; cursor: pointer; padding: 7px 11px; }
-      button:disabled { cursor: wait; opacity: 0.65; }
-      .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-      .row { margin: 12px 0; }
-      .muted { color: #666; }
-      .status { display: inline-block; margin-left: 8px; min-height: 20px; }
-    </style>
+    <link rel="stylesheet" href="src/options.css" />
   </head>
   <body>
-    <h2>PinAllWindows</h2>
-    <div class="row">
-      Synchronizes pinned tabs across all Chrome windows in this profile using union mode.
-    </div>
-    <div class="row muted">
-      Union mode means: pin anywhere -> appears everywhere; unpin anywhere -> removed everywhere.
-    </div>
+    <main class="settings-page">
+      <header class="hero">
+        <img class="app-icon" src="icons/icon48.png" alt="" width="48" height="48" />
+        <div>
+          <h1>PinAllWindows</h1>
+          <p>Keep pinned tabs synchronized across your Chrome windows.</p>
+        </div>
+      </header>
 
-    <div class="button-row">
-      <button id="repair-storage">Repair pinned tabs</button>
-      <button id="clear-storage">Clear pinned storage</button>
-      <button id="copy-diagnostics">Copy diagnostics</button>
-      <span id="status" class="status muted"></span>
-    </div>
+      <section class="settings-card" aria-labelledby="side-panel-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Side panel</p>
+          <h2 id="side-panel-heading">Choose what appears in the panel</h2>
+        </div>
 
-    <div class="row muted">
-      Repair rebuilds the saved pinned set from your current pinned tabs, keeps one app per origin, and syncs all normal windows.
-      Clear removes the saved pinned set and applies an empty sync state.
-      Diagnostics contains recent sync decisions and IDs, but not tab titles or full URLs.
-    </div>
+        <label class="setting-row" for="show-pinned-tabs">
+          <span class="setting-copy">
+            <span class="setting-title">Show pinned tabs</span>
+            <span class="setting-description">
+              Display the “Pinned tabs” section in the side panel. Pinned tab syncing continues when hidden.
+            </span>
+          </span>
+          <span class="switch">
+            <input id="show-pinned-tabs" class="switch-input" type="checkbox" checked />
+            <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          </span>
+        </label>
+        <p id="preference-status" class="inline-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="settings-card" aria-labelledby="sync-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Pinned tab sync</p>
+          <h2 id="sync-heading">Union mode</h2>
+          <p class="section-description">Your pinned set stays consistent across all normal Chrome windows.</p>
+        </div>
+
+        <div class="mode-explanation" aria-label="Union mode behavior">
+          <div>
+            <span class="mode-symbol" aria-hidden="true">+</span>
+            <span><strong>Pin anywhere</strong> appears everywhere</span>
+          </div>
+          <div>
+            <span class="mode-symbol remove" aria-hidden="true">−</span>
+            <span><strong>Unpin anywhere</strong> is removed everywhere</span>
+          </div>
+        </div>
+
+        <div class="card-action">
+          <div>
+            <h3>Repair pinned tabs</h3>
+            <p>Rebuild the saved set from your current pinned tabs, keep one app per origin, and sync normal windows.</p>
+          </div>
+          <button id="repair-storage" class="button secondary" type="button">Repair pinned tabs</button>
+        </div>
+      </section>
+
+      <section class="settings-card" aria-labelledby="troubleshooting-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Troubleshooting</p>
+          <h2 id="troubleshooting-heading">Diagnostics and reset</h2>
+        </div>
+
+        <div class="action-list">
+          <div class="card-action">
+            <div>
+              <h3>Copy diagnostics</h3>
+              <p>Copy recent sync decisions and IDs without tab titles or full URLs.</p>
+            </div>
+            <button id="copy-diagnostics" class="button secondary" type="button">Copy diagnostics</button>
+          </div>
+
+          <div class="card-action danger-row">
+            <div>
+              <h3>Clear pinned storage</h3>
+              <p>Remove the saved pinned set and apply an empty sync state to normal windows.</p>
+            </div>
+            <button id="clear-storage" class="button danger" type="button">Clear pinned storage</button>
+          </div>
+        </div>
+      </section>
+
+      <p id="action-status" class="page-status" role="status" aria-live="polite"></p>
+    </main>
 
     <script type="module" src="src/options.js"></script>
   </body>

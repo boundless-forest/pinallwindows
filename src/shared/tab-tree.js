@@ -71,9 +71,11 @@ export function getUnpinnedTabTree(tree) {
     }));
 }
 
-export function flattenVisibleTabTreeTabs(tree) {
+export function flattenVisibleTabTreeTabs(tree, options = {}) {
+    const includePinnedTabs = options.includePinnedTabs !== false;
+    const pinnedTabs = includePinnedTabs ? getPinnedTabs(tree) : [];
     return [
-        ...getPinnedTabs(tree),
+        ...pinnedTabs,
         ...flattenTabTreeTabs(getUnpinnedTabTree(tree))
     ];
 }

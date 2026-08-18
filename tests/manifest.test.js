@@ -47,3 +47,14 @@ test("initial keyboard selection does not outline the active tab", async () => {
   assert.ok(activeSelectionRule);
   assert.match(activeSelectionRule[1], /box-shadow:\s*none;/);
 });
+
+test("options page groups display, sync, and troubleshooting controls", async () => {
+  const optionsUrl = new URL("../options.html", import.meta.url);
+  const options = await readFile(optionsUrl, "utf8");
+
+  assert.match(options, /id="show-pinned-tabs"/);
+  assert.match(options, /Pinned tab syncing continues when hidden\./);
+  assert.match(options, /id="repair-storage"/);
+  assert.match(options, /id="copy-diagnostics"/);
+  assert.match(options, /id="clear-storage"[^>]*class="button danger"/);
+});

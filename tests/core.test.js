@@ -185,6 +185,10 @@ test("tab tree exposes every pinned tab by window and hides pinned tabs from win
   assert.deepEqual(getPinnedTabs(tree).map((tab) => tab.windowLabel), ["Current window", "Window 2"]);
   assert.deepEqual(getUnpinnedTabTree(tree).flatMap((win) => win.tabs.map((tab) => tab.id)), [4, 2]);
   assert.deepEqual(flattenVisibleTabTreeTabs(tree).map((tab) => tab.id), [3, 1, 4, 2]);
+  assert.deepEqual(
+    flattenVisibleTabTreeTabs(tree, { includePinnedTabs: false }).map((tab) => tab.id),
+    [4, 2],
+  );
 });
 
 test("tab tree keeps pinned copies from each window in visible order", () => {

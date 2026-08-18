@@ -1,8 +1,12 @@
 import {
     MESSAGE_CLEAR_STORAGE,
     MESSAGE_GET_SYNC_DIAGNOSTICS,
-    MESSAGE_REPAIR_PINNED_STORAGE
+    MESSAGE_REPAIR_PINNED_STORAGE,
+    STORAGE_SHOW_PINNED_TABS_KEY
 } from "./background/constants.js";
+import { storageGet, storageSet } from "./background/chrome-api.js";
+import { resolveShowPinnedTabs } from "./shared/preferences.js";
+
 function sendRuntimeMessage(type) {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({ type }, (response) => {
@@ -14,63 +18,129 @@ function sendRuntimeMessage(type) {
         });
     });
 }
+
 function initOptionsPage() {
-    const statusEl = document.getElementById("status");
+    const actionStatusEl = document.getElementById("action-status");
+    const preferenceStatusEl = document.getElementById("preference-status");
+    const showPinnedTabsInput = document.getElementById("show-pinned-tabs");
     const clearStorageButton = document.getElementById("clear-storage");
     const repairStorageButton = document.getElementById("repair-storage");
     const copyDiagnosticsButton = document.getElementById("copy-diagnostics");
-    if (!(statusEl instanceof HTMLElement) ||
-        !(clearStorageButton instanceof HTMLButtonElement) ||
-        !(repairStorageButton instanceof HTMLButtonElement) ||
-        !(copyDiagnosticsButton instanceof HTMLButtonElement)) {
+
+    if (!(actionStatusEl instanceof HTMLElement)
+        || !(preferenceStatusEl instanceof HTMLElement)
+        || !(showPinnedTabsInput instanceof HTMLInputElement)
+        || !(clearStorageButton instanceof HTMLButtonElement)
+        || !(repairStorageButton instanceof HTMLButtonElement)
+        || !(copyDiagnosticsButton instanceof HTMLButtonElement)) {
         throw new Error("PinAllWindows options page is missing required elements");
     }
-    const statusNode = statusEl;
-    const clearButtonNode = clearStorageButton;
-    const repairButtonNode = repairStorageButton;
-    const diagnosticsButtonNode = copyDiagnosticsButton;
-    function setStatus(text) {
-        statusNode.textContent = text;
+
+    let actionStatusTimer = null;
+    let preferenceStatusTimer = null;
+
+    function setTemporaryStatus(element, text, timerName) {
+        element.textContent = text;
+        const currentTimer = timerName === "action" ? actionStatusTimer : preferenceStatusTimer;
+        if (currentTimer)
+            clearTimeout(currentTimer);
+        const nextTimer = setTimeout(() => {
+            element.textContent = "";
+        }, 3000);
+        if (timerName === "action")
+            actionStatusTimer = nextTimer;
+        else
+            preferenceStatusTimer = nextTimer;
     }
-    function setButtonsDisabled(disabled) {
-        repairButtonNode.disabled = disabled;
-        clearButtonNode.disabled = disabled;
-        diagnosticsButtonNode.disabled = disabled;
+
+    function setActionButtonsDisabled(disabled) {
+        repairStorageButton.disabled = disabled;
+        clearStorageButton.disabled = disabled;
+        copyDiagnosticsButton.disabled = disabled;
     }
+
     async function runAction(inProgressText, successText, messageType) {
-        setButtonsDisabled(true);
-        setStatus(inProgressText);
+        setActionButtonsDisabled(true);
+        actionStatusEl.textContent = inProgressText;
         const result = await sendRuntimeMessage(messageType);
+        setActionButtonsDisabled(false);
         if (result.ok) {
-            setStatus(successText);
+            setTemporaryStatus(actionStatusEl, successText, "action");
         }
         else {
-            setStatus(`Failed: ${result.error || "unknown"}`);
+            setTemporaryStatus(actionStatusEl, `Failed: ${result.error || "unknown"}`, "action");
         }
-        setButtonsDisabled(false);
-        setTimeout(() => setStatus(""), 3000);
     }
-    repairButtonNode.addEventListener("click", async () => {
-        await runAction("Repairing...", "Pinned tabs repaired.", MESSAGE_REPAIR_PINNED_STORAGE);
+
+    async function loadPreferences() {
+        const stored = await storageGet([STORAGE_SHOW_PINNED_TABS_KEY]);
+        showPinnedTabsInput.checked = resolveShowPinnedTabs(stored[STORAGE_SHOW_PINNED_TABS_KEY]);
+        showPinnedTabsInput.disabled = false;
+    }
+
+    showPinnedTabsInput.disabled = true;
+    showPinnedTabsInput.addEventListener("change", async () => {
+        const previousValue = !showPinnedTabsInput.checked;
+        showPinnedTabsInput.disabled = true;
+        preferenceStatusEl.textContent = "Saving...";
+        try {
+            await storageSet({
+                [STORAGE_SHOW_PINNED_TABS_KEY]: showPinnedTabsInput.checked
+            });
+            setTemporaryStatus(preferenceStatusEl, "Preference saved.", "preference");
+        }
+        catch (error) {
+            showPinnedTabsInput.checked = previousValue;
+            setTemporaryStatus(
+                preferenceStatusEl,
+                `Failed: ${error instanceof Error ? error.message : String(error)}`,
+                "preference"
+            );
+        }
+        showPinnedTabsInput.disabled = false;
     });
-    clearButtonNode.addEventListener("click", async () => {
-        await runAction("Clearing...", "Cleared pinned storage.", MESSAGE_CLEAR_STORAGE);
+
+    repairStorageButton.addEventListener("click", async () => {
+        await runAction("Repairing pinned tabs...", "Pinned tabs repaired.", MESSAGE_REPAIR_PINNED_STORAGE);
     });
-    diagnosticsButtonNode.addEventListener("click", async () => {
-        setButtonsDisabled(true);
-        setStatus("Copying...");
+
+    clearStorageButton.addEventListener("click", async () => {
+        const confirmed = window.confirm(
+            "Clear the saved pinned set and remove synchronized pinned tabs from normal windows?"
+        );
+        if (!confirmed)
+            return;
+        await runAction("Clearing pinned storage...", "Pinned storage cleared.", MESSAGE_CLEAR_STORAGE);
+    });
+
+    copyDiagnosticsButton.addEventListener("click", async () => {
+        setActionButtonsDisabled(true);
+        actionStatusEl.textContent = "Copying diagnostics...";
         const result = await sendRuntimeMessage(MESSAGE_GET_SYNC_DIAGNOSTICS);
         try {
             if (!result.ok)
                 throw new Error(result.error || "unknown");
             await navigator.clipboard.writeText(JSON.stringify(result.entries || [], null, 2));
-            setStatus("Diagnostics copied.");
+            setTemporaryStatus(actionStatusEl, "Diagnostics copied.", "action");
         }
         catch (error) {
-            setStatus(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+            setTemporaryStatus(
+                actionStatusEl,
+                `Failed: ${error instanceof Error ? error.message : String(error)}`,
+                "action"
+            );
         }
-        setButtonsDisabled(false);
-        setTimeout(() => setStatus(""), 3000);
+        setActionButtonsDisabled(false);
+    });
+
+    loadPreferences().catch((error) => {
+        showPinnedTabsInput.disabled = true;
+        setTemporaryStatus(
+            preferenceStatusEl,
+            `Failed: ${error instanceof Error ? error.message : String(error)}`,
+            "preference"
+        );
     });
 }
+
 initOptionsPage();
