@@ -95,7 +95,11 @@ test("options page groups display, sync, and troubleshooting controls", async ()
 
   assert.match(options, /id="show-pinned-tabs"/);
   assert.match(options, /Pinned tab syncing continues when hidden\./);
-  assert.match(options, /id="repair-storage"/);
+  assert.match(options, /Keep pinned tabs in sync/);
+  assert.match(options, /id="repair-storage"[^>]*>Resync pinned tabs</);
   assert.match(options, /id="copy-diagnostics"/);
-  assert.match(options, /id="clear-storage"[^>]*class="button danger"/);
+  assert.match(options, /id="clear-storage"[^>]*class="button danger"[^>]*>Reset synced pinned tabs</);
+  assert.equal(options.includes("Union mode"), false);
+  assert.equal(options.includes("pinned storage"), false);
+  assert.equal(options.includes("empty sync state"), false);
 });
