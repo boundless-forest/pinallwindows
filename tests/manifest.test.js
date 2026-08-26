@@ -1,18 +1,59 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import {
+  MESSAGE_CLEAR_STORAGE,
+  MESSAGE_GET_SYNC_DIAGNOSTICS,
+  MESSAGE_REPAIR_PINNED_STORAGE,
+  STORAGE_INITIALIZED_KEY,
+  STORAGE_LEGACY_CANONICAL_KEY,
+  STORAGE_ORIGINS_KEY,
+  STORAGE_REVISION_KEY,
+  STORAGE_SHOW_PINNED_TABS_KEY,
+} from "../src/background/constants.js";
 
-test("package metadata clearly describes cross-window pinned-tab sync", async () => {
+test("package metadata presents TabSpan as a cross-window tab manager", async () => {
   const manifestUrl = new URL("../manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
 
-  assert.equal(manifest.name, "PinAllWindows: Sync Pinned Tabs");
+  assert.equal(manifest.name, "TabSpan: Cross-Window Tab Manager");
   assert.equal(
     manifest.description,
-    "Sync the same pinned tabs across every Chrome window and manage all open tabs from one side panel.",
+    "See, find, move, and manage tabs across every Chrome window from one unified side panel.",
   );
   assert.ok(manifest.name.length <= 75);
   assert.ok(manifest.description.length <= 132);
+});
+
+test("rebrand preserves installed extension state and message identifiers", () => {
+  assert.deepEqual(
+    [
+      STORAGE_ORIGINS_KEY,
+      STORAGE_INITIALIZED_KEY,
+      STORAGE_REVISION_KEY,
+      STORAGE_LEGACY_CANONICAL_KEY,
+      STORAGE_SHOW_PINNED_TABS_KEY,
+    ],
+    [
+      "pinallwindows.origins",
+      "pinallwindows.initialized",
+      "pinallwindows.revision",
+      "pinallwindows.canonical",
+      "pinallwindows.showPinnedTabs",
+    ],
+  );
+  assert.deepEqual(
+    [
+      MESSAGE_CLEAR_STORAGE,
+      MESSAGE_REPAIR_PINNED_STORAGE,
+      MESSAGE_GET_SYNC_DIAGNOSTICS,
+    ],
+    [
+      "PINALLWINDOWS_CLEAR_STORAGE",
+      "PINALLWINDOWS_REPAIR_PINNED_STORAGE",
+      "PINALLWINDOWS_GET_SYNC_DIAGNOSTICS",
+    ],
+  );
 });
 
 test("action shortcut uses the low-conflict numeric binding on every platform", async () => {

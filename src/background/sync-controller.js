@@ -154,7 +154,7 @@ export function createSyncController(canonicalStore, dependencies = {}) {
             }
             catch (error) {
                 ledger.finishCreate(operation, { keepForEvents: false });
-                console.warn("PinAllWindows: failed to create pinned tab", {
+                console.warn("TabSpan: failed to create pinned tab", {
                     windowId,
                     key: item.key,
                     error
@@ -186,7 +186,7 @@ export function createSyncController(canonicalStore, dependencies = {}) {
         }
         catch (error) {
             ledger.finishRemove(operations, { keepForEvents: false });
-            console.warn("PinAllWindows: failed to remove pinned tabs", {
+            console.warn("TabSpan: failed to remove pinned tabs", {
                 windowId,
                 removeTabIds: current.plan.removeTabIds,
                 error
@@ -234,7 +234,7 @@ export function createSyncController(canonicalStore, dependencies = {}) {
             });
         }
         catch (error) {
-            console.error("PinAllWindows: sync failed", { reason, error });
+            console.error("TabSpan: sync failed", { reason, error });
         }
     }
 

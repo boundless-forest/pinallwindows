@@ -7,7 +7,7 @@ export class AsyncTaskQueue {
     enqueue(label, task) {
         const run = this.tail.then(task);
         this.tail = run.catch((error) => {
-            this.onError("PinAllWindows: queued task failed", { label, error });
+            this.onError("TabSpan: queued task failed", { label, error });
         });
         return run;
     }

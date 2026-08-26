@@ -33,7 +33,7 @@ function initOptionsPage() {
         || !(clearStorageButton instanceof HTMLButtonElement)
         || !(repairStorageButton instanceof HTMLButtonElement)
         || !(copyDiagnosticsButton instanceof HTMLButtonElement)) {
-        throw new Error("PinAllWindows options page is missing required elements");
+        throw new Error("TabSpan options page is missing required elements");
     }
 
     let actionStatusTimer = null;

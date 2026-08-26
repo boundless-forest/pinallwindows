@@ -28,6 +28,6 @@ export function registerTabTreeActionHandlers() {
         clearActionPopup(),
         enableActionSidePanel()
     ]).catch((error) => {
-        console.warn("PinAllWindows: failed to enable side panel action", error?.message || error);
+        console.warn("TabSpan: failed to enable side panel action", error?.message || error);
     });
 }

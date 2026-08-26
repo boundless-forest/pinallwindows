@@ -58,9 +58,9 @@ function promoSvg({ width, height, small, backgroundDataUri, iconDataUri }) {
         <rect width="${width}" height="${height}" fill="url(#smallShade)"/>
         <rect x="24" y="20" width="38" height="38" rx="11" fill="#111D4C" stroke="#294682" stroke-width="1"/>
         <image href="${iconDataUri}" x="27" y="23" width="32" height="32"/>
-        <text x="70" y="45" fill="#DCE6FF" font-family="Manrope" font-size="15" font-weight="700" letter-spacing="-.25">PinAllWindows</text>
+        <text x="70" y="45" fill="#DCE6FF" font-family="Manrope" font-size="15" font-weight="700" letter-spacing="-.25">TabSpan</text>
         <text x="28" y="105" fill="#FFFFFF" font-family="Manrope" font-size="43" font-weight="800" letter-spacing="-1.7">
-          <tspan x="28" dy="0">Pin once.</tspan>
+          <tspan x="28" dy="0">Every tab.</tspan>
           <tspan x="28" dy="45" fill="#A9C2FF">Every window.</tspan>
         </text>
       </svg>`;
@@ -85,12 +85,12 @@ function promoSvg({ width, height, small, backgroundDataUri, iconDataUri }) {
       <rect width="${width}" height="${height}" fill="url(#marqueeShade)"/>
       <rect width="${width}" height="${height}" fill="url(#bottomShade)"/>
       <image href="${iconDataUri}" x="96" y="68" width="42" height="42"/>
-      <text x="151" y="97" fill="#DCE6FF" font-family="Manrope" font-size="22" font-weight="700" letter-spacing="-.35">PinAllWindows</text>
+      <text x="151" y="97" fill="#DCE6FF" font-family="Manrope" font-size="22" font-weight="700" letter-spacing="-.35">TabSpan</text>
       <text x="96" y="205" fill="#FFFFFF" font-family="Manrope" font-size="76" font-weight="800" letter-spacing="-3.1">
-        <tspan x="96" dy="0">Pin once.</tspan>
-        <tspan x="96" dy="78" fill="#A9C2FF">Every window.</tspan>
+        <tspan x="96" dy="0">Every tab.</tspan>
+        <tspan x="96" dy="78" fill="#A9C2FF">Across every window.</tspan>
       </text>
-      <text x="100" y="376" fill="#C6D4FA" font-family="Manrope" font-size="25" font-weight="500" letter-spacing="-.35">Your essential apps stay ready across Chrome.</text>
+      <text x="100" y="376" fill="#C6D4FA" font-family="Manrope" font-size="25" font-weight="500" letter-spacing="-.35">One live side panel for all your Chrome windows.</text>
     </svg>`;
 }
 

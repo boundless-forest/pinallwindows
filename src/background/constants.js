@@ -1,3 +1,4 @@
+// Keep the original namespace so installed profiles retain their state after the TabSpan rebrand.
 export const STORAGE_ORIGINS_KEY = "pinallwindows.origins";
 export const STORAGE_INITIALIZED_KEY = "pinallwindows.initialized";
 export const STORAGE_REVISION_KEY = "pinallwindows.revision";
