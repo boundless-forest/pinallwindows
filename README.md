@@ -66,9 +66,9 @@ To switch to another page on the same site:
 2. Open the page you prefer.
 3. Pin the new tab.
 
-### Repair the pinned workspace
+### Resync the pinned workspace
 
-If your pinned tabs ever become inconsistent, open the extension options and select **Repair pinned tabs**. TabSpan rebuilds the shared set from your currently pinned tabs, removes duplicates, and synchronizes your normal windows again.
+If your pinned tabs ever become inconsistent, open the extension options and select **Resync pinned tabs**. TabSpan rebuilds the shared set from your currently pinned tabs, removes duplicates, and synchronizes your normal windows again.
 
 ## Frequently asked questions
 
