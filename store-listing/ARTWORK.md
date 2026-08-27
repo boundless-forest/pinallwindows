@@ -4,11 +4,11 @@
 
 **Every tab. Across every window.**
 
-The visual system uses three connected browser windows to communicate one live view across a multi-window Chrome workspace. Repeated pinned-app tiles preserve the extension's distinctive synchronization capability without making it the entire product story. Deep indigo conveys focus and reliability; electric blue carries the connection across windows; coral adds a distinct focal point.
+The visual system uses orderly tab lanes to connect several browser windows with one unified side-panel view. The source windows remain visually secondary, while the side panel becomes the clear destination and communicates cross-window tab management at a glance. Deep indigo conveys focus and reliability; coral, violet, teal, and blue tab markers echo the extension icon.
 
 The redesigned icon combines two overlapping browser windows with the same coral, violet, and teal pinned tabs in each window. Repeated colors communicate that the pinned workspace stays consistent across windows without relying on a separate pin symbol. The 16 px source simplifies the window outlines and enlarges the colored tabs for Chrome's toolbar.
 
-Promotional copy uses the bundled Manrope family. The headline is deliberately limited to two lines, with more relaxed tracking and a blue second line to keep the cross-window promise readable at both Web Store sizes.
+Promotional copy uses the bundled Manrope family. The headline is deliberately limited to two lines, with more relaxed tracking and a blue second line to keep the cross-window promise readable at both Web Store sizes. The small tile uses a dedicated, simplified background rather than cropping the marquee artwork.
 
 ## Upload assets
 
@@ -46,8 +46,16 @@ The screenshots show the real extension UI with privacy-safe sample content.
 
 ## Source asset provenance
 
-The textless connected-window artwork was generated with OpenAI ImageGen for this repository. Prompt:
+The textless Tab Flow artwork was generated with OpenAI ImageGen for this repository. The marquee prompt was:
 
-> Create a premium textless key visual for a Chrome Web Store productivity extension named TabSpan. Wide advertising composition, designed to be cropped to both 1400x560 and 440x280. Show three simplified, elegant browser-window cards arranged in depth, connected as one coherent multi-window workspace. Each window may share the same small row of colorful pinned-tab dots or compact app tiles along the upper-left edge. A subtle glowing path connects the windows, communicating “every tab across every window.” Deep navy-to-indigo full-bleed background, electric blue and violet highlights, one restrained coral accent, soft glass panels, crisp modern editorial 3D/flat hybrid, premium and trustworthy, high contrast, uncluttered. Keep the important connected-window motif centered and safe within the middle 60% of the canvas. No people. No readable text. No letters. No logos. No Google or Chrome branding. No real company icons. No watermark. No fake detailed UI, just abstract browser frames and tab symbols. Avoid excessive glow, gradients that reduce contrast, tiny details, and visual clutter.
+> Deeply refine the Tab Flow direction into a premium 1400x560 Chrome Web Store marquee background. Keep three compact source browser windows stacked vertically, three orderly tab-data lanes, and one tall unified side-panel view at the far right. Reduce floating cards, use crisp and consistent geometry, and leave the left 55% completely calm for typography. Use near-black navy, deep indigo, periwinkle outlines, and restrained coral, violet, teal, and blue tab accents. Background artwork only: no text, logo, people, real browser branding, readable UI, map pins, watermark, clutter, crossing lanes, or bright objects in the copy zone.
+
+The final marquee placement refinement was:
+
+> Uniformly scale the three source windows, three connecting tab lanes, and unified right-side panel down by approximately 12%, then move the entire grouped system to the right so no visible object begins before 58% of the canvas width. Preserve the exact background, illustration style, colors, geometry, hierarchy, lane paths, shadows, and sharpness. Keep generous right padding and do not crop or distort the side panel. Add no text, logo, new objects, glow, map pins, or watermark.
+
+The small-tile prompt was:
+
+> Create a compact 440x280 companion to the Tab Flow direction. Show two abstract browser windows in the lower-left and lower-center feeding two clean connection lanes into one simplified vertical side-panel card at the lower-right. Keep the top 58% calm for typography and place the complete visual story in the bottom 42%. Use fewer, larger shapes, consistent rounded geometry, deep navy and indigo surfaces, periwinkle outlines, and coral, violet, teal, and blue tab accents. Background artwork only: no text, logo, people, browser branding, readable UI, map pins, watermark, tiny cards, dense dashboards, or bright detail behind the copy zone.
 
 Manrope is distributed under the SIL Open Font License 1.1. The font license is preserved alongside the checked-in font files.

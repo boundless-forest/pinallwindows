@@ -159,7 +159,12 @@
   </head>
   <body>
     <main class="artboard">
-      <img class="key-visual" src="../assets/source/connected-windows.png" alt="" />
+      <img
+        id="key-visual"
+        class="key-visual"
+        src="../assets/source/tab-flow-marquee-v2.png"
+        alt=""
+      />
       <div class="shade"></div>
       <section class="copy">
         <div class="brand">
@@ -174,6 +179,7 @@
       const format = new URLSearchParams(location.search).get("format");
       if (format === "small") {
         document.body.classList.add("small");
+        document.querySelector("#key-visual").src = "../assets/source/tab-flow-small.png";
       }
     </script>
   </body>
