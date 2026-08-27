@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PinAllWindows Options</title>
+    <title>TabSpan Options</title>
     <link rel="stylesheet" href="src/options.css" />
   </head>
   <body>
@@ -11,8 +11,8 @@
       <header class="hero">
         <img class="app-icon" src="icons/icon48.png" alt="" width="48" height="48" />
         <div>
-          <h1>PinAllWindows</h1>
-          <p>Keep pinned tabs synchronized across your Chrome windows.</p>
+          <h1>TabSpan</h1>
+          <p>Manage tabs across every Chrome window from one side panel.</p>
         </div>
       </header>
 
@@ -40,11 +40,11 @@
       <section class="settings-card" aria-labelledby="sync-heading">
         <div class="section-heading">
           <p class="eyebrow">Pinned tab sync</p>
-          <h2 id="sync-heading">Union mode</h2>
+          <h2 id="sync-heading">Keep pinned tabs in sync</h2>
           <p class="section-description">Your pinned set stays consistent across all normal Chrome windows.</p>
         </div>
 
-        <div class="mode-explanation" aria-label="Union mode behavior">
+        <div class="mode-explanation" aria-label="Pinned tab sync behavior">
           <div>
             <span class="mode-symbol" aria-hidden="true">+</span>
             <span><strong>Pin anywhere</strong> appears everywhere</span>
@@ -57,10 +57,10 @@
 
         <div class="card-action">
           <div>
-            <h3>Repair pinned tabs</h3>
-            <p>Rebuild the saved set from your current pinned tabs, keep one app per origin, and sync normal windows.</p>
+            <h3>Resync pinned tabs</h3>
+            <p>Rebuild the shared set from the tabs currently pinned in your normal Chrome windows.</p>
           </div>
-          <button id="repair-storage" class="button secondary" type="button">Repair pinned tabs</button>
+          <button id="repair-storage" class="button secondary" type="button">Resync pinned tabs</button>
         </div>
       </section>
 
@@ -81,10 +81,10 @@
 
           <div class="card-action danger-row">
             <div>
-              <h3>Clear pinned storage</h3>
-              <p>Remove the saved pinned set and apply an empty sync state to normal windows.</p>
+              <h3>Reset synced pinned tabs</h3>
+              <p>Remove the shared pinned set and unpin its tabs from normal Chrome windows.</p>
             </div>
-            <button id="clear-storage" class="button danger" type="button">Clear pinned storage</button>
+            <button id="clear-storage" class="button danger" type="button">Reset synced pinned tabs</button>
           </div>
         </div>
       </section>

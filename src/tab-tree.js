@@ -48,7 +48,7 @@ function runtimeError() {
 
 function assertElement(value, name) {
     if (!(value instanceof HTMLElement))
-        throw new Error(`PinAllWindows tab tree is missing ${name}`);
+        throw new Error(`TabSpan tab tree is missing ${name}`);
     return value;
 }
 

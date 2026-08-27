@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PinAllWindows promo artwork</title>
+    <title>TabSpan promo artwork</title>
     <style>
       @font-face {
         font-family: "Manrope";
@@ -159,21 +159,27 @@
   </head>
   <body>
     <main class="artboard">
-      <img class="key-visual" src="../assets/source/connected-windows.png" alt="" />
+      <img
+        id="key-visual"
+        class="key-visual"
+        src="../assets/source/tab-flow-marquee-v2.png"
+        alt=""
+      />
       <div class="shade"></div>
       <section class="copy">
         <div class="brand">
           <img src="../../icons/icon128.png" alt="" />
-          <span>PinAllWindows</span>
+          <span>TabSpan</span>
         </div>
-        <h1>Pin once.<br /><span>Every window.</span></h1>
-        <p>Your essential apps stay ready across Chrome.</p>
+        <h1>Every tab.<br /><span>Across every window.</span></h1>
+        <p>One live side panel for all your Chrome windows.</p>
       </section>
     </main>
     <script>
       const format = new URLSearchParams(location.search).get("format");
       if (format === "small") {
         document.body.classList.add("small");
+        document.querySelector("#key-visual").src = "../assets/source/tab-flow-small.png";
       }
     </script>
   </body>

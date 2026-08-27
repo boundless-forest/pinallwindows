@@ -33,7 +33,7 @@ The command:
 2. Verifies the manifest and package versions match.
 3. Copies only extension runtime files into `dist-store/`.
 4. Checks every packaged JavaScript file and manifest file reference.
-5. Creates `PinAllWindows-<version>.zip` with `manifest.json` at its root.
+5. Creates `TabSpan-<version>.zip` with `manifest.json` at its root.
 6. Prints the archive size and SHA-256 checksum.
 
 Upload the generated ZIP in the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).

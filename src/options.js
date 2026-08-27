@@ -33,7 +33,7 @@ function initOptionsPage() {
         || !(clearStorageButton instanceof HTMLButtonElement)
         || !(repairStorageButton instanceof HTMLButtonElement)
         || !(copyDiagnosticsButton instanceof HTMLButtonElement)) {
-        throw new Error("PinAllWindows options page is missing required elements");
+        throw new Error("TabSpan options page is missing required elements");
     }
 
     let actionStatusTimer = null;
@@ -101,16 +101,16 @@ function initOptionsPage() {
     });
 
     repairStorageButton.addEventListener("click", async () => {
-        await runAction("Repairing pinned tabs...", "Pinned tabs repaired.", MESSAGE_REPAIR_PINNED_STORAGE);
+        await runAction("Resyncing pinned tabs...", "Pinned tabs resynced.", MESSAGE_REPAIR_PINNED_STORAGE);
     });
 
     clearStorageButton.addEventListener("click", async () => {
         const confirmed = window.confirm(
-            "Clear the saved pinned set and remove synchronized pinned tabs from normal windows?"
+            "Reset the shared pinned set and unpin its tabs from normal Chrome windows?"
         );
         if (!confirmed)
             return;
-        await runAction("Clearing pinned storage...", "Pinned storage cleared.", MESSAGE_CLEAR_STORAGE);
+        await runAction("Resetting synced pinned tabs...", "Synced pinned tabs reset.", MESSAGE_CLEAR_STORAGE);
     });
 
     copyDiagnosticsButton.addEventListener("click", async () => {
