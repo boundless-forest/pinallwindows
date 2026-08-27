@@ -17,15 +17,17 @@ Promotional copy uses the bundled Manrope family. The headline is deliberately l
 | Store icon | 128×128 | Upload-ready in `icons/` |
 | Small promo tile | 440×280 | Upload-ready in `assets/final/` |
 | Marquee promo tile | 1400×560 | Upload-ready in `assets/final/`; optional placement |
-| Screenshots | 1280×800 | Three upload-ready JPEG files in `assets/final/screenshots/` |
+| Screenshots | 1280×800 | Capture manually before the next Web Store submission |
 
-The generated promo artwork is textless at source. Product name and headline are composed from editable SVG and HTML/CSS sources so every character remains crisp and reproducible.
+The generated promo artwork is textless at source. Product name and headline are composed by the SVG renderer in `scripts/render-store-assets.mjs` so every character remains crisp and reproducible.
 
 Run `pnpm assets:store` to rebuild the four extension icons and both promotional tiles. The renderer embeds the checked-in fonts and removes the alpha channel from Web Store promotional PNG files.
 
 The promo images communicate the product concept, but they do not replace product screenshots. Chrome's screenshot slots should show the real extension and real browser behavior.
 
-## Screenshot sequence
+## Planned screenshot sequence
+
+Fresh product screenshots are intentionally not checked in yet. Capture and review them manually before the next Chrome Web Store submission, then place the approved files in `assets/final/screenshots/` using the names below.
 
 Upload the screenshots in this order:
 
@@ -33,7 +35,7 @@ Upload the screenshots in this order:
 2. `screenshot-01-pin-once.jpg` — introduce pinned-app synchronization in one window.
 3. `screenshot-02-every-window.jpg` — show the same pinned apps appearing in another window.
 
-The screenshots show the real extension UI with privacy-safe sample content.
+The screenshots must show the current extension UI with privacy-safe sample content.
 
 ## Screenshot rules
 
