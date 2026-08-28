@@ -5,6 +5,6 @@
 
 Use `icons/icon128.png` as the store icon. Matching colored tabs in two overlapping browser windows communicate one connected workspace across windows.
 
-Product screenshots are intentionally not included until fresh images are captured and reviewed manually. Follow `store-listing/ARTWORK.md` for the planned sequence, filenames, and export requirements.
+The two upload-ready screenshots are in `screenshots/`. They lead with the unified cross-window side panel, then show pinned apps synchronized across windows. Follow `store-listing/ARTWORK.md` for the upload order and source-image rules.
 
-The two promotional PNG files use bundled Manrope typography, have exact Chrome Web Store dimensions, and contain no alpha channel. Rebuild them with `pnpm assets:store`.
+The promotional artwork and screenshots use bundled Manrope typography, have exact Chrome Web Store dimensions, and contain no alpha channel. Rebuild them with `pnpm assets:store`.
