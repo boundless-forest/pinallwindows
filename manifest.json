@@ -3,7 +3,7 @@
   "name": "TabSpan: Cross-Window Tab Manager",
   "version": "1.0.0",
   "description": "See, find, move, and manage tabs across every Chrome window from one unified side panel.",
-  "permissions": ["tabs", "windows", "storage", "sidePanel"],
+  "permissions": ["tabs", "windows", "storage", "sidePanel", "tabGroups"],
   "background": {
     "service_worker": "src/background.js",
     "type": "module"

@@ -142,6 +142,21 @@ button {
   opacity: 0.72;
 }
 
+.window-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
 .tab-row,
 .target-row {
   width: 100%;
@@ -292,6 +307,25 @@ button {
   border-color: #e3b2a0;
   color: #914532;
   background: #fff2ed;
+}
+
+.tab-action.merge-action {
+  border-color: #96c5aa;
+  color: #235f43;
+  background: #edf8f1;
+  font-weight: 600;
+}
+
+.tab-action.merge-action:hover,
+.tab-action.merge-action:focus-visible {
+  border-color: #46765b;
+  background: #e1f2e7;
+  outline: none;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .tab-action.move-action:hover,

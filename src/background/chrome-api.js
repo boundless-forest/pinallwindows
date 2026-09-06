@@ -124,3 +124,58 @@ export function getTab(tabId) {
         });
     });
 }
+export function moveTabs(tabIds, moveInfo) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.move(tabIds, moveInfo, (tabs) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(tabs);
+        });
+    });
+}
+export function moveTabGroup(groupId, moveInfo) {
+    return new Promise((resolve, reject) => {
+        chrome.tabGroups.move(groupId, moveInfo, (group) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(group);
+        });
+    });
+}
+export function getTabGroup(groupId) {
+    return new Promise((resolve) => {
+        chrome.tabGroups.get(groupId, (group) => {
+            resolve(runtimeError() ? null : group);
+        });
+    });
+}
+export function updateTabGroup(groupId, updateInfo) {
+    return new Promise((resolve, reject) => {
+        chrome.tabGroups.update(groupId, updateInfo, (group) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(group);
+        });
+    });
+}
+export function updateTab(tabId, updateInfo) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.update(tabId, updateInfo, (tab) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(tab);
+        });
+    });
+}

@@ -1,4 +1,5 @@
 import { getTabUrl, isSyncWindow } from "./tab-utils.js";
+import { classifyWindowSnapshot, WINDOW_STATUS_ELIGIBLE } from "../background/window-eligibility.js";
 
 function byTabIndex(a, b) {
     return (a.index || 0) - (b.index || 0);
@@ -44,6 +45,8 @@ export function buildTabTreeModel(windows, currentWindowId) {
             id: win.id,
             label: isCurrentWindow ? "Current window" : `Window ${index + 1}`,
             isCurrentWindow,
+            incognito: win.incognito === true,
+            mergeEligible: classifyWindowSnapshot(win) === WINDOW_STATUS_ELIGIBLE,
             focused: win.focused === true,
             tabs
         };

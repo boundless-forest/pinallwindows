@@ -2,12 +2,18 @@ import {
     createPinnedTab,
     getAllCandidateWindows,
     getTab,
+    getTabGroup,
     getWindowWithTabs,
-    removeTabs
+    moveTabs,
+    moveTabGroup,
+    removeTabs,
+    updateTab,
+    updateTabGroup
 } from "./chrome-api.js";
 import {
     MESSAGE_CLEAR_STORAGE,
     MESSAGE_GET_SYNC_DIAGNOSTICS,
+    MESSAGE_MERGE_WINDOWS,
     MESSAGE_REPAIR_PINNED_STORAGE,
     SYNC_DELAY_DEFAULT_MS,
     SYNC_DELAY_FAST_MS,
@@ -16,6 +22,7 @@ import {
     UNPIN_CONFIRM_DELAY_MS
 } from "./constants.js";
 import { AsyncTaskQueue } from "./async-task-queue.js";
+import { mergeWindowTabs } from "./window-merge.js";
 import { MutationLedger } from "./mutation-ledger.js";
 import { PendingIntentRegistry } from "./pending-intents.js";
 import { SyncDiagnostics } from "./sync-diagnostics.js";
@@ -52,8 +59,13 @@ export function createSyncController(canonicalStore, dependencies = {}) {
         createPinnedTab,
         getAllCandidateWindows,
         getTab,
+        getTabGroup,
         getWindowWithTabs,
+        moveTabs,
+        moveTabGroup,
         removeTabs,
+        updateTab,
+        updateTabGroup,
         ...dependencies.api
     };
     const chromeEvents = dependencies.chrome || chrome;
@@ -268,6 +280,17 @@ export function createSyncController(canonicalStore, dependencies = {}) {
         });
     }
 
+    function mergeWindows(sourceWindowId, targetWindowId) {
+        return queue.enqueue("merge_windows", async () => {
+            if (!Number.isInteger(sourceWindowId) || sourceWindowId < 0 ||
+                !Number.isInteger(targetWindowId) || targetWindowId < 0)
+                throw new Error("Choose two available browser windows to merge.");
+            // Share the sync queue so reconciliation cannot refill the source
+            // window or remove an incoming pin in the middle of the transfer.
+            await mergeWindowTabs(sourceWindowId, targetWindowId, api, ledger);
+        });
+    }
+
     async function isEligibleTabWindow(tab) {
         if (!tab || typeof tab.windowId !== "number")
             return false;
@@ -379,9 +402,12 @@ export function createSyncController(canonicalStore, dependencies = {}) {
                 sendResponse({ ok: true, entries: diagnostics.getEntries() });
                 return;
             }
-            if (type !== MESSAGE_CLEAR_STORAGE && type !== MESSAGE_REPAIR_PINNED_STORAGE)
+            if (type !== MESSAGE_CLEAR_STORAGE && type !== MESSAGE_REPAIR_PINNED_STORAGE &&
+                type !== MESSAGE_MERGE_WINDOWS)
                 return;
-            const action = type === MESSAGE_CLEAR_STORAGE ? clearPinnedStorage : repairPinnedStorage;
+            const action = type === MESSAGE_MERGE_WINDOWS
+                ? () => mergeWindows(msg.sourceWindowId, msg.targetWindowId)
+                : type === MESSAGE_CLEAR_STORAGE ? clearPinnedStorage : repairPinnedStorage;
             action()
                 .then(() => sendResponse({ ok: true }))
                 .catch((error) => sendResponse({ ok: false, error: String(error) }));
@@ -394,6 +420,7 @@ export function createSyncController(canonicalStore, dependencies = {}) {
         runSync,
         scheduleSync,
         clearPinnedStorage,
-        repairPinnedStorage
+        repairPinnedStorage,
+        mergeWindows
     };
 }

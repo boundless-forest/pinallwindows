@@ -94,10 +94,30 @@ export class MutationLedger {
         }
     }
 
+    beginPinnedMove(tabId) {
+        const operation = {
+            id: this.nextOperationId++,
+            kind: "move_pinned",
+            tabId,
+            expiresAt: this.now() + this.ttlMs
+        };
+        this.operationsByTabId.set(tabId, operation);
+        return operation;
+    }
+
+    finishPinnedMove(operation) {
+        // Stop matching as soon as the transfer ends, so a subsequent user
+        // unpin of this same tab is immediately visible to synchronization.
+        if (this.operationsByTabId.get(operation.tabId) === operation)
+            this.operationsByTabId.delete(operation.tabId);
+    }
+
     matchesInternalTabEvent(tab, canonicalKey = null, pinned = tab?.pinned) {
         this.cleanup();
         if (Number.isInteger(tab?.id)) {
             const operation = this.operationsByTabId.get(tab.id);
+            if (operation?.kind === "move_pinned")
+                return true;
             if (operation?.kind === "create" && pinned === true)
                 return true;
             if (operation?.kind === "remove" && pinned !== true)

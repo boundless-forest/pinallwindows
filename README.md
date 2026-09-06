@@ -17,6 +17,7 @@ From the side panel, you can:
 - See which tabs belong to each window.
 - Jump directly to a tab in any window.
 - Move regular tabs between windows.
+- Merge another window into your current window with one click.
 - Close regular tabs without switching windows first.
 - Hide the pinned-tabs section when you want a more compact view.
 - Navigate with the Up and Down Arrow keys, then press Enter to open the selected tab.
@@ -43,6 +44,12 @@ To hide pinned tabs from the side panel without changing synchronization, open t
 1. Open TabSpan from the toolbar or keyboard shortcut.
 2. Find the window and tab you need in the side panel.
 3. Double-click a tab to open it, or use **Move** or **Close** for a regular tab.
+
+Select **Merge here** beside another window's heading to bring its tabs into the window hosting the side panel. Regular tabs are appended in their original order, tab groups stay together, and your current page stays selected. Existing pinned apps are kept, shared pinned copies are deduplicated by site, and unique pinned tabs are moved with their pinned state intact.
+
+Chrome closes the source window once its last tab has moved. Regular tabs are not deduplicated. If tabs change or a move fails, the panel refreshes and shows an error so you can retry the remaining window. There is no confirmation dialog, success notice, or undo action.
+
+Merging is available between regular windows in the same browsing mode. Compact or floating windows are excluded. The `tabGroups` permission lets TabSpan move existing groups without losing their names, colors, or collapsed state.
 
 ### Keep an app pinned everywhere
 

@@ -8,8 +8,8 @@ import {
     getPinnedTabs,
     getUnpinnedTabTree
 } from "./shared/tab-tree.js";
-import { storageGet } from "./background/chrome-api.js";
-import { STORAGE_SHOW_PINNED_TABS_KEY } from "./background/constants.js";
+import { moveTabs, storageGet, updateTab } from "./background/chrome-api.js";
+import { MESSAGE_MERGE_WINDOWS, STORAGE_SHOW_PINNED_TABS_KEY } from "./background/constants.js";
 import { resolveShowPinnedTabs } from "./shared/preferences.js";
 
 const MODE_BROWSE = "browse";
@@ -25,10 +25,12 @@ const state = {
     selectedTargetIndex: 0,
     mode: MODE_BROWSE,
     movingTabId: null,
+    mergingWindowId: null,
     showPinnedTabs: true
 };
 
 let refreshTimer = null;
+let refreshGeneration = 0;
 
 const elements = {
     summary: document.getElementById("summary"),
@@ -50,19 +52,6 @@ function assertElement(value, name) {
     if (!(value instanceof HTMLElement))
         throw new Error(`TabSpan tab tree is missing ${name}`);
     return value;
-}
-
-function queryTabs(queryInfo) {
-    return new Promise((resolve, reject) => {
-        chrome.tabs.query(queryInfo, (tabs) => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(tabs);
-        });
-    });
 }
 
 function getAllNormalWindowsWithTabs() {
@@ -91,9 +80,9 @@ function getCommands() {
     });
 }
 
-function getLastFocusedNormalWindow() {
+function getPanelWindow() {
     return new Promise((resolve) => {
-        chrome.windows.getLastFocused({ populate: false, windowTypes: ["normal"] }, (win) => {
+        chrome.windows.getCurrent({ populate: false }, (win) => {
             if (runtimeError()) {
                 resolve(null);
                 return;
@@ -116,19 +105,6 @@ function updateWindow(windowId, updateInfo) {
     });
 }
 
-function updateTab(tabId, updateInfo) {
-    return new Promise((resolve, reject) => {
-        chrome.tabs.update(tabId, updateInfo, (tab) => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(tab);
-        });
-    });
-}
-
 function removeTab(tabId) {
     return new Promise((resolve, reject) => {
         chrome.tabs.remove(tabId, () => {
@@ -142,15 +118,19 @@ function removeTab(tabId) {
     });
 }
 
-function moveTab(tabId, moveInfo) {
+function requestWindowMerge(sourceWindowId, targetWindowId) {
     return new Promise((resolve, reject) => {
-        chrome.tabs.move(tabId, moveInfo, (tab) => {
-            const error = runtimeError();
+        chrome.runtime.sendMessage({
+            type: MESSAGE_MERGE_WINDOWS,
+            sourceWindowId,
+            targetWindowId
+        }, (response) => {
+            const error = runtimeError() || (!response?.ok && new Error(response?.error || "Could not merge windows."));
             if (error) {
                 reject(error);
                 return;
             }
-            resolve(tab);
+            resolve();
         });
     });
 }
@@ -289,6 +269,7 @@ function actionButton(text, label, className, onClick) {
     button.type = "button";
     button.className = `tab-action ${className}`;
     button.textContent = text;
+    button.disabled = state.mergingWindowId !== null;
     button.setAttribute("aria-label", label);
     button.addEventListener("click", (event) => {
         event.preventDefault();
@@ -363,18 +344,36 @@ function renderTabRow(tab) {
     return row;
 }
 
-function renderWindowHeading(labelText, countValue, countLabel, variant) {
+function renderWindowHeading(labelText, countValue, countLabel, variant, win = null) {
     const heading = document.createElement("div");
     heading.className = `window-heading ${variant}`;
 
     const label = document.createElement("span");
+    label.className = "window-label";
     label.textContent = labelText;
 
     const count = document.createElement("span");
     count.className = "window-count";
     count.textContent = `${countValue} ${countValue === 1 ? countLabel : `${countLabel}s`}`;
 
-    heading.append(label, count);
+    const actions = document.createElement("span");
+    actions.className = "window-heading-actions";
+    actions.append(count);
+    if (win && !win.isCurrentWindow && state.currentWindowId !== null) {
+        const current = state.tree.find((item) => item.isCurrentWindow);
+        const mergeLabel = `Merge all tabs from ${win.label} into Current window`;
+        const merge = actionButton(
+            state.mergingWindowId === win.id ? "Merging…" : "Merge here",
+            mergeLabel,
+            "merge-action",
+            () => mergeWindow(win.id).catch(showActionError)
+        );
+        const canMerge = win.mergeEligible && current?.mergeEligible && win.incognito === current.incognito;
+        merge.disabled = !canMerge || state.mergingWindowId !== null;
+        merge.title = canMerge ? mergeLabel : "Merge is available between regular windows of the same browsing mode. Expand compact windows to merge them.";
+        actions.append(merge);
+    }
+    heading.append(label, actions);
     return heading;
 }
 
@@ -428,7 +427,7 @@ function renderBrowseList() {
 
     for (const win of getUnpinnedTabTree(state.tree)) {
         const variant = win.isCurrentWindow ? "current-heading" : "other-heading";
-        fragment.append(renderWindowHeading(win.label, win.tabs.length, "tab", variant));
+        fragment.append(renderWindowHeading(win.label, win.tabs.length, "tab", variant, win));
 
         for (const tab of win.tabs) {
             fragment.append(renderTabRow(tab));
@@ -468,6 +467,8 @@ function renderMoveList() {
 }
 
 function render() {
+    elements.refresh.disabled = state.mergingWindowId !== null;
+    elements.tabList.setAttribute("aria-busy", state.mergingWindowId !== null ? "true" : "false");
     const windowCount = state.tree.length;
     const tabCount = flattenTabTreeTabs(state.tree).length;
     const pinnedTabCount = getPinnedTabs(state.tree).length;
@@ -496,6 +497,8 @@ function render() {
 }
 
 function scheduleRefresh() {
+    if (state.mergingWindowId !== null)
+        return;
     if (refreshTimer)
         clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
@@ -548,31 +551,24 @@ function activeTabIdInWindow(windows, windowId) {
 }
 
 async function getCurrentContext(windows) {
-    const normalWindowIds = new Set(windows.map((win) => win.id).filter((id) => typeof id === "number"));
-    const activeTabs = await queryTabs({ active: true, lastFocusedWindow: true });
-    const activeTab = activeTabs.find((tab) => {
-        return typeof tab.id === "number" && normalWindowIds.has(tab.windowId);
-    });
-    if (activeTab) {
-        return {
-            currentWindowId: activeTab.windowId,
-            activeTabId: activeTab.id
-        };
-    }
-
-    const win = await getLastFocusedNormalWindow();
-    const fallbackWindowId = normalWindowIds.has(win?.id) ? win.id : windows[0]?.id;
+    // "Here" always means the window hosting this panel, even when another
+    // window receives focus while Chrome moves tabs or the user switches apps.
+    const win = await getPanelWindow();
+    const currentWindowId = windows.some((item) => item.id === win?.id) ? win.id : null;
     return {
-        currentWindowId: typeof fallbackWindowId === "number" ? fallbackWindowId : null,
-        activeTabId: activeTabIdInWindow(windows, fallbackWindowId)
+        currentWindowId,
+        activeTabId: activeTabIdInWindow(windows, currentWindowId)
     };
 }
 
 async function refreshTree(options = {}) {
+    const generation = ++refreshGeneration;
     const fallbackIndex = Number.isInteger(options.fallbackIndex) ? options.fallbackIndex : 0;
     const previousSelection = state.selectedTabId;
     const windows = await getAllNormalWindowsWithTabs();
     const context = await getCurrentContext(windows);
+    if (state.mergingWindowId !== null || generation !== refreshGeneration)
+        return;
 
     state.currentWindowId = context.currentWindowId;
     state.activeTabId = context.activeTabId;
@@ -597,6 +593,8 @@ async function refreshTree(options = {}) {
 }
 
 async function activateTab(tabId) {
+    if (state.mergingWindowId !== null)
+        return;
     const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab)
         return;
@@ -624,6 +622,8 @@ function handleTabListKeydown(event) {
 }
 
 async function closeTab(tabId) {
+    if (state.mergingWindowId !== null)
+        return;
     const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab)
         return;
@@ -634,6 +634,8 @@ async function closeTab(tabId) {
 }
 
 function startMove(tabId) {
+    if (state.mergingWindowId !== null)
+        return;
     const tab = state.tabs.find((item) => item.id === tabId);
     if (!tab) {
         setStatus("No tab selected.");
@@ -665,7 +667,7 @@ async function confirmMove() {
         return;
     }
 
-    await moveTab(tab.id, { windowId: target.id, index: -1 });
+    await moveTabs(tab.id, { windowId: target.id, index: -1 });
     await updateTab(tab.id, { active: true });
     await updateWindow(target.id, { focused: true });
 
@@ -674,6 +676,29 @@ async function confirmMove() {
     state.selectedTabId = tab.id;
     await refreshTree({ keepSelection: true });
     setStatus("Moved tab.");
+}
+
+async function mergeWindow(sourceWindowId) {
+    if (state.mergingWindowId !== null || state.currentWindowId === null)
+        return;
+    const targetWindowId = state.currentWindowId;
+    state.mergingWindowId = sourceWindowId;
+    refreshGeneration += 1;
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+        refreshTimer = null;
+    }
+    setStatus("");
+    render();
+    try {
+        await requestWindowMerge(sourceWindowId, targetWindowId);
+    }
+    finally {
+        state.mergingWindowId = null;
+        render();
+        await refreshTree({ keepSelection: true });
+        focusTabList();
+    }
 }
 
 async function init() {
