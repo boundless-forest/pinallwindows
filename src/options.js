@@ -4,8 +4,9 @@ import {
     MESSAGE_REPAIR_PINNED_STORAGE,
     STORAGE_SHOW_PINNED_TABS_KEY
 } from "./background/constants.js";
-import { storageGet, storageSet } from "./background/chrome-api.js";
+import { getCommands, openShortcutSettings, storageGet, storageSet } from "./background/chrome-api.js";
 import { resolveShowPinnedTabs } from "./shared/preferences.js";
+import { formatShortcut } from "./shared/tab-tree.js";
 
 function sendRuntimeMessage(type) {
     return new Promise((resolve) => {
@@ -26,14 +27,18 @@ function initOptionsPage() {
     const clearStorageButton = document.getElementById("clear-storage");
     const repairStorageButton = document.getElementById("repair-storage");
     const copyDiagnosticsButton = document.getElementById("copy-diagnostics");
+    const panelShortcutEl = document.getElementById("panel-shortcut");
+    const customizeShortcutButton = document.getElementById("customize-shortcut");
 
     if (!(actionStatusEl instanceof HTMLElement)
         || !(preferenceStatusEl instanceof HTMLElement)
         || !(showPinnedTabsInput instanceof HTMLInputElement)
         || !(clearStorageButton instanceof HTMLButtonElement)
         || !(repairStorageButton instanceof HTMLButtonElement)
-        || !(copyDiagnosticsButton instanceof HTMLButtonElement)) {
-        throw new Error("TabSpan options page is missing required elements");
+        || !(copyDiagnosticsButton instanceof HTMLButtonElement)
+        || !(panelShortcutEl instanceof HTMLElement)
+        || !(customizeShortcutButton instanceof HTMLButtonElement)) {
+        throw new Error("ztab options page is missing required elements");
     }
 
     let actionStatusTimer = null;
@@ -77,6 +82,37 @@ function initOptionsPage() {
         showPinnedTabsInput.checked = resolveShowPinnedTabs(stored[STORAGE_SHOW_PINNED_TABS_KEY]);
         showPinnedTabsInput.disabled = false;
     }
+
+    async function loadPanelShortcut() {
+        try {
+            const commands = await getCommands();
+            const shortcut = commands.find((command) => command.name === "_execute_action")?.shortcut;
+            panelShortcutEl.replaceChildren();
+            if (shortcut) {
+                const key = document.createElement("kbd");
+                key.textContent = formatShortcut(shortcut);
+                panelShortcutEl.append(key);
+            }
+            else {
+                panelShortcutEl.textContent = "Not assigned";
+            }
+        }
+        catch {
+            panelShortcutEl.textContent = "Shortcut unavailable";
+        }
+    }
+
+    customizeShortcutButton.addEventListener("click", () => {
+        openShortcutSettings().catch((error) => {
+            setTemporaryStatus(actionStatusEl, `Failed: ${error.message}`, "action");
+        });
+    });
+    window.addEventListener("focus", loadPanelShortcut);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible")
+            loadPanelShortcut();
+    });
+    loadPanelShortcut();
 
     showPinnedTabsInput.disabled = true;
     showPinnedTabsInput.addEventListener("change", async () => {

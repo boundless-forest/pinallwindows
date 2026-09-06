@@ -1,16 +1,20 @@
-# TabSpan store listing
+# ztab store listing
 
-This document contains the English copy to paste into the Chrome Web Store Developer Dashboard. The copy positions TabSpan as a live cross-window tab manager while preserving pinned-tab synchronization as its distinctive built-in capability.
+Prepared English copy for the existing Chrome Web Store item. The three product pillars are cross-window tab management, shared pinned tabs, and keyboard shortcuts with thoughtful interactions. This document does not indicate that the listing has been submitted or published.
 
 ## Product name
 
-TabSpan: Cross-Window Tab Manager
+ztab: Tab Manager
+
+## Positioning
+
+Another excellent tab manager for Chrome.
 
 ## Summary
 
-See, find, move, and manage tabs across every Chrome window from one unified side panel.
+Manage tabs across Chrome windows, keep pinned tabs in sync, and move faster with keyboard shortcuts.
 
-Character count: 88 of 132.
+Character count: 101 of 132.
 
 ## Category
 
@@ -18,72 +22,87 @@ Productivity
 
 ## Detailed description
 
-Every tab. Across every window.
+Another excellent tab manager for Chrome.
 
-TabSpan brings every normal Chrome window into one live side panel. See where each tab belongs, jump directly to it, move regular tabs between windows, or close tabs without bringing every window forward first.
+ztab brings your Chrome windows together in one live side panel. Manage tabs across windows, keep your essential apps pinned in each one, and navigate comfortably with keys and clicks.
 
-ALL WINDOWS, ONE LIVE VIEW
+MANAGE TABS ACROSS WINDOWS
 
-• See tabs from every normal Chrome window in one side panel
-• Jump directly to a tab in any window
-• Move regular tabs between windows without dragging across screens
-• Close regular tabs without switching windows first
-• Open the panel from the toolbar or with Ctrl+Shift+9 (Command+Shift+9 on Mac)
-• Navigate with the Arrow keys and open the selected tab with Enter
+• See tabs grouped by their Chrome window in one side panel
+• Jump directly to a tab in any normal window
+• Move or close regular tabs without bringing each window forward
+• Use Merge here to bring another window into the current one
+• Keep tab order, groups, and pinned state when merging
 • See updates automatically as tabs and windows change
 
-PINNED APPS, READY EVERYWHERE
+KEEP PINNED TABS ACROSS WINDOWS
 
-• Keep the same pinned apps in every normal Chrome window
-• Pin in one window and let TabSpan add the app to the others
-• Unpin once to remove the app from every eligible window
-• Treat pages from the same site as one pinned app
-• Remove duplicate pinned tabs automatically
-• Avoid syncing into picture-in-picture and other ambiguous compact windows
+• Pin an app in one window and let ztab add it to the others
+• Unpin once to remove the app from the shared pinned set
+• Keep one pinned app per site in each eligible window
+• Remove duplicate pinned copies automatically
+• Hide pinned tabs in the panel while synchronization continues
+• Leave picture-in-picture and ambiguous compact windows unchanged
+
+SHORTCUTS AND THOUGHTFUL INTERACTIONS
+
+• Open the panel with Ctrl+Shift+9, or Command+Shift+9 on Mac
+• Click the shortcut hint or Customize shortcut in settings to change the opening shortcut
+• See the currently assigned shortcut and navigation hints in the panel
+• Select a tab with the Up and Down Arrow keys, then press Enter to open it
+• Move between controls with Tab and Shift+Tab
+• Double-click a row to jump to that tab
+• Find Move, Close, and Merge here beside the tabs and windows they affect
 
 LOCAL BY DESIGN
 
-TabSpan requires no account and uses no external server. It stores only the pinned site origins needed for synchronization in Chrome's local extension storage. Your tab titles and full browsing URLs are not uploaded anywhere.
+ztab requires no account and uses no external server. Pinned site origins, synchronization metadata, and the panel preference stay in Chrome's local extension storage. Your tab titles and full browsing URLs are not uploaded anywhere.
 
 GOOD TO KNOW
 
-Regular tabs remain in their existing windows; TabSpan gives you one place to view and manage them. Only pinned apps are synchronized across windows. Pinned apps are identified by site origin, so different pages on the same site count as one app.
+ztab works between windows on the same computer and in the same Chrome profile. Regular tabs stay in their windows until you move or merge them. Only pinned apps are synchronized automatically; different pages on one site count as one pinned app. Existing pins keep their current page, while newly created pinned copies open the site's root URL. Use Unpin to remove a pinned app everywhere, because closing a pinned copy may cause it to return during synchronization.
 
-## Release notes — 1.0.0
+Merge here works between eligible normal windows in the same browsing mode. Chrome closes a source window when its last tab moves. Shared pinned copies are deduplicated; identical regular tabs stay open. There is no merge undo action.
 
-TabSpan 1.0.0 introduces a new identity centered on cross-window tab management while keeping the extension's existing behavior and permissions unchanged:
+## Release notes — 1.1.0
 
-• Renames PinAllWindows to TabSpan
-• Repositions the extension as a cross-window tab manager
-• Updates product metadata, documentation, and store artwork for the new brand
-• Preserves existing pinned-tab data and synchronization behavior
+ztab is the new name for TabSpan, with a focus on three everyday capabilities: managing tabs across windows, keeping pinned apps ready across windows, and moving comfortably with shortcuts and clear interactions.
+
+• Introduces the ztab name, positioning, and store artwork
+• Includes Merge here to combine another window with the current one while preserving tab order, groups, and pinned state
+• Keeps existing pinned-site data and panel preferences when the installed extension updates
+• Adds direct access to settings and shortcut customization, with keyboard help in the panel and options page
 
 ## Permission justifications
 
 ### tabs
 
-Reads pinned-tab state and site origins, creates missing pinned tabs, removes duplicates, and powers cross-window tab navigation. No tab data is sent to an external server.
+Reads open tabs and pinned state, displays the live tab list, focuses tabs, moves or closes tabs on request, creates missing pinned tabs, and removes duplicate pinned copies. No tab data is sent to an external server.
 
 ### windows
 
-Finds normal Chrome windows so tabs can be displayed, focused, or moved across windows and the same pinned workspace can be applied to each eligible window.
+Finds normal Chrome windows so tabs can be displayed, focused, moved, or merged and the shared pinned set can be applied to each eligible window.
 
 ### storage
 
-Stores the canonical pinned-site origin list, the side-panel preference, and migration metadata locally in Chrome.
+Stores the canonical pinned-site origin list, synchronization metadata, and panel preference locally in Chrome.
 
 ### sidePanel
 
-Displays the live cross-window tab manager when the toolbar button or keyboard shortcut is used.
+Displays the cross-window tab manager when the toolbar button or opening shortcut is used.
+
+### tabGroups
+
+Reads and restores existing tab groups, including their names, colors, and collapsed state, when Merge here moves tabs to another window.
 
 ## Privacy fields
 
-- Single purpose: Provide one live view for managing tabs across Chrome windows and keep pinned apps consistent across eligible windows.
+- Single purpose: Manage tabs across Chrome windows through one live side panel, with shared pinned tabs and keyboard navigation.
 - Personally identifiable information: Not collected.
 - Authentication information: Not collected.
 - Personal communications: Not collected.
 - Location: Not collected.
-- Web history: Tab URLs are processed locally only to display open tabs and identify pinned site origins; they are not transmitted or sold.
+- Web history: Tab URLs are processed locally to display and manage open tabs and identify pinned site origins; they are not transmitted or sold.
 - Website content: Not collected or transmitted.
 - Remote code: Not used.
 

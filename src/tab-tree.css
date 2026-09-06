@@ -385,6 +385,26 @@ button:disabled {
   white-space: nowrap;
 }
 
+.shortcut-settings {
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shortcut-settings:hover {
+  color: #235f43;
+}
+
+.shortcut-settings:focus-visible,
+.settings-link:focus-visible {
+  outline: 2px solid #46765b;
+  outline-offset: 3px;
+}
+
 .shortcut-keys {
   display: inline-flex;
   gap: 2px;
@@ -406,10 +426,29 @@ button:disabled {
 }
 
 .summary-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex: 0 0 auto;
   padding: 7px 12px;
   border-top: 1px solid #e4e4e7;
   background: #fafafa;
   font-size: 12px;
   text-align: center;
+}
+
+.brand-name {
+  font-weight: 750;
+  color: #235f43;
+}
+
+.settings-link {
+  color: #52525b;
+  text-decoration: none;
+}
+
+.settings-link:hover {
+  color: #235f43;
+  text-decoration: underline;
 }

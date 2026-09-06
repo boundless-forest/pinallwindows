@@ -44,56 +44,77 @@ function escapeDataUri(buffer) {
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
 
-function promoSvg({ width, height, small, backgroundDataUri, iconDataUri }) {
+function windowMotif({ x, y, width, height, opacity = 1 }) {
+  return `<g transform="translate(${x} ${y})" opacity="${opacity}">
+    <rect width="${width}" height="${height}" rx="16" fill="#111C47" stroke="#506397" stroke-width="2"/>
+    <path d="M0 46H${width}" stroke="#506397" stroke-width="2"/>
+    <rect x="20" y="17" width="25" height="12" rx="4" fill="#FF846E"/>
+    <rect x="53" y="17" width="25" height="12" rx="4" fill="#A58AFF"/>
+    <rect x="86" y="17" width="25" height="12" rx="4" fill="#73DCC7"/>
+    <rect x="20" y="67" width="${width - 40}" height="20" rx="6" fill="#263765"/>
+    <rect x="20" y="101" width="${width - 78}" height="8" rx="4" fill="#506397"/>
+    <rect x="20" y="124" width="${width - 108}" height="8" rx="4" fill="#3C4E7F"/>
+  </g>`;
+}
+
+function promoSvg({ width, height, small, iconDataUri }) {
   if (small) {
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
         <defs>
-          <linearGradient id="smallShade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#030922" stop-opacity=".98"/>
-            <stop offset=".56" stop-color="#030922" stop-opacity=".78"/>
-            <stop offset=".76" stop-color="#030922" stop-opacity=".3"/>
-            <stop offset="1" stop-color="#030922" stop-opacity=".04"/>
+          <linearGradient id="smallShade" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#070E2A"/>
+            <stop offset="1" stop-color="#1B2456"/>
           </linearGradient>
         </defs>
-        <rect width="${width}" height="${height}" fill="#071033"/>
-        <image href="${backgroundDataUri}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>
         <rect width="${width}" height="${height}" fill="url(#smallShade)"/>
-        <rect x="24" y="20" width="38" height="38" rx="11" fill="#111D4C" stroke="#294682" stroke-width="1"/>
-        <image href="${iconDataUri}" x="27" y="23" width="32" height="32"/>
-        <text x="70" y="45" fill="#DCE6FF" font-family="Manrope" font-size="15" font-weight="700" letter-spacing="-.25">TabSpan</text>
-        <text x="28" y="105" fill="#FFFFFF" font-family="Manrope" font-size="43" font-weight="800" letter-spacing="-1.7">
-          <tspan x="28" dy="0">Every tab.</tspan>
-          <tspan x="28" dy="45" fill="#A9C2FF">Every window.</tspan>
+        <circle cx="421" cy="0" r="134" fill="none" stroke="#A58AFF" stroke-opacity=".15" stroke-width="26"/>
+        <image href="${iconDataUri}" x="30" y="27" width="45" height="45"/>
+        <text x="87" y="61" fill="#F3F6FF" font-family="Manrope" font-size="33" font-weight="800" letter-spacing="-1">ztab</text>
+        <text x="32" y="125" fill="#FFFFFF" font-family="Manrope" font-size="29" font-weight="800" letter-spacing="-.9">
+          <tspan x="32" dy="0">Another excellent</tspan>
+          <tspan x="32" dy="38" fill="#B7CCFF" font-size="27">tab manager for Chrome.</tspan>
         </text>
+        <path d="M32 193H408" stroke="#677BAF" stroke-opacity=".35"/>
+        <g font-family="Manrope" font-size="15" font-weight="700" fill="#DCE6FF">
+          <circle cx="37" cy="228" r="4" fill="#FF846E"/><text x="50" y="233">Windows</text>
+          <circle cx="183" cy="228" r="4" fill="#A58AFF"/><text x="196" y="233">Pins</text>
+          <circle cx="293" cy="228" r="4" fill="#73DCC7"/><text x="306" y="233">Shortcuts</text>
+        </g>
       </svg>`;
   }
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <defs>
-        <linearGradient id="marqueeShade" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#030922" stop-opacity=".98"/>
-          <stop offset=".34" stop-color="#030922" stop-opacity=".88"/>
-          <stop offset=".62" stop-color="#030922" stop-opacity=".16"/>
-          <stop offset="1" stop-color="#030922" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="bottomShade" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0" stop-color="#030922" stop-opacity=".38"/>
-          <stop offset=".55" stop-color="#030922" stop-opacity="0"/>
+        <linearGradient id="marqueeShade" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#070E2A"/>
+          <stop offset="1" stop-color="#1B2456"/>
         </linearGradient>
       </defs>
-      <rect width="${width}" height="${height}" fill="#071033"/>
-      <image href="${backgroundDataUri}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>
       <rect width="${width}" height="${height}" fill="url(#marqueeShade)"/>
-      <rect width="${width}" height="${height}" fill="url(#bottomShade)"/>
-      <image href="${iconDataUri}" x="96" y="68" width="42" height="42"/>
-      <text x="151" y="97" fill="#DCE6FF" font-family="Manrope" font-size="22" font-weight="700" letter-spacing="-.35">TabSpan</text>
-      <text x="96" y="205" fill="#FFFFFF" font-family="Manrope" font-size="76" font-weight="800" letter-spacing="-3.1">
-        <tspan x="96" dy="0">Every tab.</tspan>
-        <tspan x="96" dy="78" fill="#A9C2FF">Across every window.</tspan>
+      <circle cx="1200" cy="58" r="250" fill="#A58AFF" opacity=".05"/>
+      <image href="${iconDataUri}" x="64" y="52" width="50" height="50"/>
+      <text x="128" y="90" fill="#F3F6FF" font-family="Manrope" font-size="37" font-weight="800" letter-spacing="-1.2">ztab</text>
+      <text x="64" y="197" fill="#FFFFFF" font-family="Manrope" font-size="51" font-weight="800" letter-spacing="-1.7">
+        <tspan x="64" dy="0">Another excellent</tspan>
+        <tspan x="64" dy="66" fill="#B7CCFF">tab manager for Chrome.</tspan>
       </text>
-      <text x="100" y="376" fill="#C6D4FA" font-family="Manrope" font-size="25" font-weight="500" letter-spacing="-.35">One live side panel for all your Chrome windows.</text>
+      <text x="67" y="321" fill="#C6D4FA" font-family="Manrope" font-size="22" font-weight="500">A little more order. A lot less tab juggling.</text>
+      ${windowMotif({ x: 939, y: 62, width: 320, height: 179, opacity: 0.65 })}
+      ${windowMotif({ x: 875, y: 163, width: 320, height: 179 })}
+      <path d="M1217 242v27a30 30 0 0 1-30 30h-18" fill="none" stroke="#73DCC7" stroke-width="3" stroke-linecap="round"/>
+      <path d="m1178 290-10 9 10 9" fill="none" stroke="#73DCC7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      ${[
+        { x: 64, color: "#FF846E", title: "Across windows", description: "View, move, and merge tabs across windows." },
+        { x: 495, color: "#A58AFF", title: "Pinned tabs, in sync", description: "Keep your pinned apps close in every window." },
+        { x: 926, color: "#73DCC7", title: "Made to move quickly", description: "Fast shortcuts. Thoughtful interactions." },
+      ].map(({ x, color, title, description }) => `
+        <rect x="${x}" y="410" width="410" height="101" rx="14" fill="#101B42" stroke="#344673"/>
+        <rect x="${x + 23}" y="435" width="5" height="48" rx="2.5" fill="${color}"/>
+        <text x="${x + 44}" y="453" fill="#F3F6FF" font-family="Manrope" font-size="22" font-weight="700" letter-spacing="-.4">${title}</text>
+        <text x="${x + 44}" y="482" fill="#B9C9EC" font-family="Manrope" font-size="14" font-weight="500">${description}</text>
+      `).join("")}
     </svg>`;
 }
 
@@ -105,6 +126,7 @@ function screenshotSvg({
   headlineLead,
   headlineAccent,
   supporting,
+  pillar,
   iconDataUri,
 }) {
   return `
@@ -136,7 +158,8 @@ function screenshotSvg({
       </g>
 
       <image href="${iconDataUri}" x="60" y="31" width="42" height="42"/>
-      <text x="116" y="60" fill="#DCE6FF" font-family="Manrope" font-size="21" font-weight="700" letter-spacing="-.3">TabSpan</text>
+      <text x="116" y="60" fill="#DCE6FF" font-family="Manrope" font-size="25" font-weight="800" letter-spacing="-.6">ztab</text>
+      <text x="1129" y="58" text-anchor="end" fill="#B9C9EC" font-family="Manrope" font-size="14" font-weight="700" letter-spacing="1.2">${pillar}</text>
       <text x="60" y="132" font-family="Manrope" font-size="52" font-weight="800" letter-spacing="-2">
         <tspan fill="#FFFFFF">${headlineLead}</tspan>
         <tspan fill="url(#accent)"> ${headlineAccent}</tspan>
@@ -145,7 +168,7 @@ function screenshotSvg({
 
       <rect x="28" y="220" width="1224" height="556" rx="14" fill="#071033" filter="url(#shadow)"/>
       <g clip-path="url(#productClip)">
-        <svg x="28" y="220" width="1224" height="556" viewBox="${crop.x} ${crop.y} ${crop.width} ${crop.height}" preserveAspectRatio="xMidYMid slice">
+        <svg x="28" y="220" width="1224" height="556" viewBox="${crop.x} ${crop.y} ${crop.width} ${crop.height}" preserveAspectRatio="xMidYMid meet">
           <image href="${screenshotDataUri}" width="${sourceWidth}" height="${sourceHeight}"/>
         </svg>
       </g>
@@ -153,16 +176,61 @@ function screenshotSvg({
     </svg>`;
 }
 
+function keyboardScreenshotSvg({ screenshotDataUri, sourceWidth, sourceHeight, crop, iconDataUri }) {
+  const productScale = Math.min(520 / crop.width, 646 / crop.height);
+  const productWidth = crop.width * productScale;
+  const productHeight = crop.height * productScale;
+  const productX = 700 + (520 - productWidth) / 2;
+  const productY = 102 + (646 - productHeight) / 2;
+  const steps = [
+    { y: 392, key: "Your shortcut", title: "Open the side panel", detail: "Customize the opener in Chrome." },
+    { y: 494, key: "Up / Down", title: "Select a tab", detail: "Move through tabs across windows." },
+    { y: 596, key: "Enter", title: "Switch to that tab", detail: "Bring its window into focus." },
+  ];
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+    <defs>
+      <linearGradient id="keyboardBackground" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#070E2A"/>
+        <stop offset="1" stop-color="#1B2456"/>
+      </linearGradient>
+      <clipPath id="keyboardProductClip"><rect x="${productX}" y="${productY}" width="${productWidth}" height="${productHeight}" rx="16"/></clipPath>
+    </defs>
+    <rect width="1280" height="800" fill="url(#keyboardBackground)"/>
+    <circle cx="1185" cy="65" r="200" fill="#73DCC7" opacity=".04"/>
+    <image href="${iconDataUri}" x="60" y="31" width="42" height="42"/>
+    <text x="116" y="60" fill="#DCE6FF" font-family="Manrope" font-size="25" font-weight="800" letter-spacing="-.6">ztab</text>
+    <text x="1220" y="58" text-anchor="end" fill="#B9C9EC" font-family="Manrope" font-size="14" font-weight="700" letter-spacing="1.2">03 / KEYS AND INTERACTIONS</text>
+    <text x="60" y="180" fill="#FFFFFF" font-family="Manrope" font-size="55" font-weight="800" letter-spacing="-2">
+      <tspan x="60">Fast keys.</tspan>
+      <tspan x="60" dy="65" fill="#B7CCFF">Thoughtful details.</tspan>
+    </text>
+    <text x="63" y="307" fill="#C6D4FA" font-family="Manrope" font-size="23" font-weight="500">
+      <tspan x="63">Keep your hands on the keyboard.</tspan>
+      <tspan x="63" dy="34">Get to the right tab in a few keystrokes.</tspan>
+    </text>
+    ${steps.map(({ y, key, title, detail }) => `
+      <rect x="62" y="${y}" width="170" height="62" rx="11" fill="#233158" stroke="#5A6E9F"/>
+      <path d="M76 ${y + 55}H218" stroke="#0D1737" stroke-width="2" stroke-linecap="round"/>
+      <text x="147" y="${y + 37}" text-anchor="middle" fill="#F3F6FF" font-family="Manrope" font-size="18" font-weight="700">${key}</text>
+      <text x="253" y="${y + 23}" fill="#F3F6FF" font-family="Manrope" font-size="21" font-weight="700">${title}</text>
+      <text x="253" y="${y + 50}" fill="#B9C9EC" font-family="Manrope" font-size="15" font-weight="500">${detail}</text>
+    `).join("")}
+    <text x="63" y="728" fill="#8FA5D3" font-family="Manrope" font-size="14" font-weight="500">Keyboard navigation works while the tab list is focused.</text>
+    <rect x="${productX}" y="${productY}" width="${productWidth}" height="${productHeight}" rx="16" fill="#071033"/>
+    <g clip-path="url(#keyboardProductClip)">
+      <svg x="${productX}" y="${productY}" width="${productWidth}" height="${productHeight}" viewBox="${crop.x} ${crop.y} ${crop.width} ${crop.height}" preserveAspectRatio="xMidYMid meet">
+        <image href="${screenshotDataUri}" width="${sourceWidth}" height="${sourceHeight}"/>
+      </svg>
+    </g>
+    <rect x="${productX + 0.5}" y="${productY + 0.5}" width="${productWidth - 1}" height="${productHeight - 1}" rx="15.5" fill="none" stroke="#8EA8EF" stroke-opacity=".45"/>
+  </svg>`;
+}
+
 const iconSvg = await readFile(join(sourceDirectory, "icon.svg"), "utf8");
 const smallIconSvg = await readFile(
   join(sourceDirectory, "icon-small.svg"),
   "utf8",
-);
-const marqueeBackground = await readFile(
-  join(projectRoot, "store-listing", "assets", "source", "tab-flow-marquee-v2.png"),
-);
-const smallBackground = await readFile(
-  join(projectRoot, "store-listing", "assets", "source", "tab-flow-small.png"),
 );
 
 await Promise.all([
@@ -173,8 +241,6 @@ await Promise.all([
 ]);
 
 const renderedIcon = await readFile(join(projectRoot, "icons", "icon128.png"));
-const marqueeBackgroundDataUri = escapeDataUri(marqueeBackground);
-const smallBackgroundDataUri = escapeDataUri(smallBackground);
 const iconDataUri = escapeDataUri(renderedIcon);
 
 await mkdir(screenshotFinalDirectory, { recursive: true });
@@ -183,18 +249,24 @@ const screenshotSpecs = [
   {
     source: "side-panel-raw.png",
     output: "screenshot-01-side-panel.png",
-    crop: { x: 0, y: 0, width: 4480, height: 2028 },
-    headlineLead: "Every tab.",
-    headlineAccent: "Across every window.",
-    supporting: "See, jump, move, and close tabs from one unified side panel.",
+    headlineLead: "All your tabs.",
+    headlineAccent: "One place.",
+    supporting: "View, move, and close tabs, or merge windows from one side panel.",
+    pillar: "01 / ACROSS WINDOWS",
   },
   {
     source: "pinned-tabs-raw.png",
     output: "screenshot-02-pinned-tabs.png",
-    crop: { x: 0, y: 0, width: 4448, height: 1994 },
     headlineLead: "Pin once.",
     headlineAccent: "Ready in every window.",
     supporting: "Keep the same pinned apps across every Chrome window.",
+    pillar: "02 / PINNED TABS IN SYNC",
+  },
+  {
+    source: "keyboard-raw.png",
+    output: "screenshot-03-keyboard.png",
+    crop: { x: 1030, y: 84, width: 370, height: 656 },
+    render: keyboardScreenshotSvg,
   },
 ];
 
@@ -203,8 +275,9 @@ const screenshotRenders = screenshotSpecs.map(async (spec) => {
   const decoded = PNG.sync.read(source);
 
   return renderSvg(
-    screenshotSvg({
+    (spec.render || screenshotSvg)({
       ...spec,
+      crop: spec.crop || { x: 0, y: 0, width: decoded.width, height: decoded.height },
       screenshotDataUri: escapeDataUri(source),
       sourceWidth: decoded.width,
       sourceHeight: decoded.height,
@@ -222,7 +295,6 @@ await Promise.all([
       width: 440,
       height: 280,
       small: true,
-      backgroundDataUri: smallBackgroundDataUri,
       iconDataUri,
     }),
     join(finalDirectory, "promo-small-440x280.png"),
@@ -234,7 +306,6 @@ await Promise.all([
       width: 1400,
       height: 560,
       small: false,
-      backgroundDataUri: marqueeBackgroundDataUri,
       iconDataUri,
     }),
     join(finalDirectory, "promo-marquee-1400x560.png"),

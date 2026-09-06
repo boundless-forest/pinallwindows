@@ -6,6 +6,30 @@ function runtimeError() {
         return null;
     return new Error(chrome.runtime.lastError.message);
 }
+export function getCommands() {
+    return new Promise((resolve, reject) => {
+        chrome.commands.getAll((commands) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(commands);
+        });
+    });
+}
+export function openShortcutSettings() {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.create({ url: "chrome://extensions/shortcuts" }, (tab) => {
+            const error = runtimeError();
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(tab);
+        });
+    });
+}
 export function storageGet(keys) {
     return new Promise((resolve, reject) => {
         chrome.storage.local.get(keys, (items) => {

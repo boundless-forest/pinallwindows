@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import {
   MESSAGE_CLEAR_STORAGE,
   MESSAGE_GET_SYNC_DIAGNOSTICS,
+  MESSAGE_MERGE_WINDOWS,
   MESSAGE_REPAIR_PINNED_STORAGE,
   STORAGE_INITIALIZED_KEY,
   STORAGE_LEGACY_CANONICAL_KEY,
@@ -12,14 +13,14 @@ import {
   STORAGE_SHOW_PINNED_TABS_KEY,
 } from "../src/background/constants.js";
 
-test("package metadata presents TabSpan as a cross-window tab manager", async () => {
+test("package metadata presents ztab as a cross-window tab manager", async () => {
   const manifestUrl = new URL("../manifest.json", import.meta.url);
   const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
 
-  assert.equal(manifest.name, "TabSpan: Cross-Window Tab Manager");
+  assert.equal(manifest.name, "ztab: Tab Manager");
   assert.equal(
     manifest.description,
-    "See, find, move, and manage tabs across every Chrome window from one unified side panel.",
+    "Manage tabs across Chrome windows, keep pinned tabs in sync, and move faster with keyboard shortcuts.",
   );
   assert.ok(manifest.name.length <= 75);
   assert.ok(manifest.description.length <= 132);
@@ -47,11 +48,13 @@ test("rebrand preserves installed extension state and message identifiers", () =
       MESSAGE_CLEAR_STORAGE,
       MESSAGE_REPAIR_PINNED_STORAGE,
       MESSAGE_GET_SYNC_DIAGNOSTICS,
+      MESSAGE_MERGE_WINDOWS,
     ],
     [
       "PINALLWINDOWS_CLEAR_STORAGE",
       "PINALLWINDOWS_REPAIR_PINNED_STORAGE",
       "PINALLWINDOWS_GET_SYNC_DIAGNOSTICS",
+      "TABSPAN_MERGE_WINDOWS",
     ],
   );
 });

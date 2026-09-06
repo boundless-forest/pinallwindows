@@ -3,3 +3,6 @@ node_modules/
 .vscode/
 dist-store/
 TabSpan-*.zip
+ztab-*.zip
+output/playwright/
+.playwright-cli/

@@ -248,6 +248,39 @@ input {
   border-top: 1px solid var(--border);
 }
 
+.shortcut-list {
+  margin: 0;
+  padding: 0 24px 18px;
+}
+
+.shortcut-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.shortcut-list dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.shortcut-list kbd {
+  display: inline-block;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 2px 7px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .danger-row {
   background: #fffdfc;
 }

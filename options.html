@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TabSpan Options</title>
+    <title>ztab Options</title>
     <link rel="stylesheet" href="src/options.css" />
   </head>
   <body>
@@ -11,8 +11,8 @@
       <header class="hero">
         <img class="app-icon" src="icons/icon48.png" alt="" width="48" height="48" />
         <div>
-          <h1>TabSpan</h1>
-          <p>Manage tabs across every Chrome window from one side panel.</p>
+          <h1>ztab</h1>
+          <p>Another excellent tab manager for Chrome.</p>
         </div>
       </header>
 
@@ -35,6 +35,29 @@
           </span>
         </label>
         <p id="preference-status" class="inline-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="settings-card" aria-labelledby="shortcuts-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Keyboard and interaction</p>
+          <h2 id="shortcuts-heading">Keep your hands on the keyboard</h2>
+          <p class="section-description">Open the panel, select a tab, and jump to it in any window.</p>
+        </div>
+
+        <dl class="shortcut-list">
+          <div><dt>Open the panel</dt><dd id="panel-shortcut">Loading shortcut...</dd></div>
+          <div><dt>Select a tab in the list</dt><dd><kbd>↑</kbd> <kbd>↓</kbd></dd></div>
+          <div><dt>Open the selected tab</dt><dd><kbd>Enter</kbd></dd></div>
+          <div><dt>Reach buttons and controls</dt><dd><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></dd></div>
+        </dl>
+
+        <div class="card-action">
+          <div>
+            <h3>Make the shortcut yours</h3>
+            <p>Choose your panel shortcut in Chrome's extension settings. ztab shows your current assignment.</p>
+          </div>
+          <button id="customize-shortcut" class="button secondary" type="button">Customize shortcut</button>
+        </div>
       </section>
 
       <section class="settings-card" aria-labelledby="sync-heading">

@@ -8,7 +8,7 @@ import {
     getPinnedTabs,
     getUnpinnedTabTree
 } from "./shared/tab-tree.js";
-import { moveTabs, storageGet, updateTab } from "./background/chrome-api.js";
+import { getCommands, moveTabs, openShortcutSettings, storageGet, updateTab } from "./background/chrome-api.js";
 import { MESSAGE_MERGE_WINDOWS, STORAGE_SHOW_PINNED_TABS_KEY } from "./background/constants.js";
 import { resolveShowPinnedTabs } from "./shared/preferences.js";
 
@@ -38,6 +38,7 @@ const elements = {
     modeBar: document.getElementById("mode-bar"),
     status: document.getElementById("status"),
     tabList: document.getElementById("tab-list"),
+    openShortcut: document.getElementById("open-shortcut"),
     openShortcutKeys: document.getElementById("open-shortcut-keys"),
     openShortcutLabel: document.getElementById("open-shortcut-label")
 };
@@ -50,7 +51,7 @@ function runtimeError() {
 
 function assertElement(value, name) {
     if (!(value instanceof HTMLElement))
-        throw new Error(`TabSpan tab tree is missing ${name}`);
+        throw new Error(`ztab tab tree is missing ${name}`);
     return value;
 }
 
@@ -63,19 +64,6 @@ function getAllNormalWindowsWithTabs() {
                 return;
             }
             resolve(windows);
-        });
-    });
-}
-
-function getCommands() {
-    return new Promise((resolve, reject) => {
-        chrome.commands.getAll((commands) => {
-            const error = runtimeError();
-            if (error) {
-                reject(error);
-                return;
-            }
-            resolve(commands);
         });
     });
 }
@@ -161,6 +149,13 @@ async function renderOpenShortcut() {
     key.textContent = formatShortcut(shortcut);
     elements.openShortcutKeys.append(key);
     elements.openShortcutLabel.textContent = "Open panel";
+}
+
+function refreshOpenShortcut() {
+    return renderOpenShortcut().catch(() => {
+        elements.openShortcutKeys.replaceChildren();
+        elements.openShortcutLabel.textContent = "Panel shortcut unavailable";
+    });
 }
 
 function focusTabList() {
@@ -707,6 +702,7 @@ async function init() {
     elements.modeBar = assertElement(elements.modeBar, "mode bar");
     elements.status = assertElement(elements.status, "status");
     elements.tabList = assertElement(elements.tabList, "tab list");
+    elements.openShortcut = assertElement(elements.openShortcut, "shortcut settings button");
     elements.openShortcutKeys = assertElement(elements.openShortcutKeys, "open shortcut keys");
     elements.openShortcutLabel = assertElement(elements.openShortcutLabel, "open shortcut label");
 
@@ -716,15 +712,22 @@ async function init() {
     elements.refresh.addEventListener("click", () => {
         refreshTree({ keepSelection: true }).catch(showActionError);
     });
+    elements.openShortcut.addEventListener("click", () => {
+        openShortcutSettings().catch(showActionError);
+    });
+    // Chrome has no command-change event; refresh the assignment when the user returns from settings.
+    window.addEventListener("focus", refreshOpenShortcut);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible")
+            refreshOpenShortcut();
+    });
     elements.tabList.addEventListener("keydown", handleTabListKeydown);
     registerAutoRefreshHandlers();
     registerPreferenceChangeHandler();
 
     await Promise.all([
         refreshTree({ preferActive: true }),
-        renderOpenShortcut().catch(() => {
-            elements.openShortcutLabel.textContent = "Panel shortcut unavailable";
-        })
+        refreshOpenShortcut()
     ]);
     focusTabList();
 }

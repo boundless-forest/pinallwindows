@@ -1,19 +1,19 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TabSpan</title>
+    <title>ztab</title>
     <link rel="stylesheet" href="src/tab-tree.css" />
   </head>
   <body class="side-panel">
     <main class="app">
       <header class="topbar">
         <div class="shortcut-help" aria-label="Keyboard shortcuts">
-          <span id="open-shortcut" class="help-item" title="Change this shortcut in Chrome's extension shortcut settings">
+          <button id="open-shortcut" class="help-item shortcut-settings" type="button" title="Change this shortcut in Chrome's extension shortcut settings" aria-label="Customize the ztab panel shortcut">
             <span id="open-shortcut-keys" class="shortcut-keys"></span>
             <span id="open-shortcut-label">Open panel</span>
-          </span>
+          </button>
           <span class="help-separator" aria-hidden="true">·</span>
           <span class="help-item"><kbd>↑</kbd><kbd>↓</kbd> Select</span>
           <span class="help-separator" aria-hidden="true">·</span>
@@ -27,7 +27,9 @@
       <div id="tab-list" class="tab-list" role="listbox" aria-label="All tabs" tabindex="0"></div>
 
       <footer class="summary-footer">
+        <span class="brand-name">ztab</span>
         <p id="summary" class="summary">Loading tabs...</p>
+        <a href="options.html" target="_blank" rel="noopener" class="settings-link" aria-label="ztab settings">Settings</a>
       </footer>
     </main>
 

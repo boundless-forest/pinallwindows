@@ -16,7 +16,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(repoRoot, "manifest.json"), "utf8"));
 const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
 const stagingDirectory = join(repoRoot, "dist-store");
-const archivePath = join(repoRoot, `TabSpan-${manifest.version}.zip`);
+const archivePath = join(repoRoot, `ztab-${manifest.version}.zip`);
 
 const packageEntries = [
   "manifest.json",
@@ -118,7 +118,7 @@ function formatBytes(bytes) {
   return `${(bytes / 1024).toFixed(1)} KiB`;
 }
 
-console.log(`Packaging TabSpan ${manifest.version}`);
+console.log(`Packaging ztab ${manifest.version}`);
 console.log("Running tests...");
 run(process.execPath, ["--test"]);
 
